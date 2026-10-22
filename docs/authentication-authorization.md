@@ -2,6 +2,8 @@
 
 Status: proposed design. The APIs and security controls below are not implemented yet.
 
+Authentication direction has since changed to access JWTs backed by application-owned sessions and rotating refresh tokens. Their [domain models](data-and-domain-model.md#authsession--one-login) are defined. The servlet-session login, cookie, and CSRF contracts below describe the earlier proposal and will need revision when implementing the application and HTTP layers.
+
 Build a backend that lets users register, sign in, belong to multiple tenants, and perform actions according to their role in each tenant. The application has no selected business domain. This document uses **organization** as the name for a tenant.
 
 The existing project uses Java 21, Spring Boot, Spring Security, Spring Data JPA, Flyway, and PostgreSQL.

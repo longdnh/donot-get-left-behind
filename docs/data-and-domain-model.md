@@ -1,18 +1,20 @@
 # Data and domain models
 
-This is the model foundation for the generic multi-tenant authentication backend described in [the authentication design](authentication-authorization.md). There are three concepts: a global user, an organization representing a tenant, and membership connecting the two.
+This is the model foundation for the generic multi-tenant authentication backend described in [the authentication design](authentication-authorization.md). A global user connects to organizations through memberships. Authentication also has a login session and the refresh tokens issued for that session.
 
-Domain classes, JPA mappings, and the initial Flyway migration are defined. Authorization services, repositories, HTTP endpoints, and UUID generation are separate implementation steps.
+Domain classes, JPA mappings, and the initial Flyway migration are defined for users, organizations, and memberships. `AuthSession` and `RefreshToken` currently have domain models only; their persistence mappings and tables are not implemented. Application services, repositories, HTTP endpoints, token generation/hashing/signing, and UUID generation are separate implementation steps.
 
 ## 1. Domain model versus data model
 
 | Layer | Purpose | Examples |
 | --- | --- | --- |
-| Domain | Express valid state and state transitions | `User`, `Organization`, `Membership`, `Role` |
+| Domain | Express valid state and state transitions | `User`, `AuthSession`, `RefreshToken`, `Organization`, `Membership`, `Role` |
 | Persistence mapping | Translate domain state to database columns | `UserEntity`, `OrganizationEntity`, `MembershipEntity` |
 | Database | Store records and enforce structural integrity | `users`, `organizations`, `memberships` |
 
 Domain classes use no Spring or JPA annotations. They are immutable and use Lombok only to generate getters. An operation such as `rename` or `changeRole` returns a new object, which the application service must save.
+
+Shared UUIDv7 and nonblank-string checks live in `common.Validation`. Its static methods return validated values, preserve field-specific error messages, and perform no normalization. The common package depends only on the JDK; domain-specific length limits and lifecycle rules stay with their models.
 
 JPA classes have mutable persistence fields and protected no-argument constructors, as required by [Jakarta Persistence](https://jakarta.ee/specifications/persistence/3.2/apidocs/jakarta.persistence/jakarta/persistence/Entity.html). They map through `fromDomain(...)` and `toDomain()`; they are not HTTP response DTOs.
 
@@ -59,6 +61,38 @@ The diagram expresses database relationships. The service must create an organiz
 - `isActive()` distinguishes `ACTIVE` from `DISABLED`.
 - Organization roles and membership lists are not part of this identity model.
 
+### AuthSession — one login
+
+`identity.domain.AuthSession` contains `id`, `userId`, `createdAt`, `lastSeenAt`, `absoluteExpiresAt`, and nullable `revokedAt`. This is an application-owned session for the JWT design, independent of servlet `HttpSession`.
+
+| Operation | Behavior |
+| --- | --- |
+| `create(id, userId, now, absoluteExpiresAt)` | Creates an unrevoked session with creation and activity timestamps set to `now` |
+| `isActiveAt(now, idleTimeout)` | Checks revocation, absolute expiration, and inactivity; requires a positive timeout |
+| `recordActivity(now, idleTimeout)` | Returns new state with updated activity time only while the session is active |
+| `revoke(now)` | Records revocation; repeated calls preserve the first revocation time |
+
+All IDs must be UUIDv7. Absolute expiration must follow creation. Activity must be on or after creation and strictly before absolute expiration. Revocation cannot precede the last activity, but an already-expired session can still be revoked. State changes cannot move activity time backward, and an activity check before the recorded `lastSeenAt` fails closed.
+
+Expiration takes effect exactly at either deadline: `now >= absoluteExpiresAt` or elapsed inactivity `>= idleTimeout`. Activity never extends the absolute deadline, and an expired or revoked session cannot be reactivated. Status is derived from timestamps rather than stored as an `EXPIRED` flag. Time and idle-timeout policy are supplied by the application; the model does not read the clock or configure durations.
+
+### RefreshToken — a credential's persisted state
+
+`identity.domain.RefreshToken` contains `id`, `sessionId`, `tokenHash`, `createdAt`, `expiresAt`, nullable `consumedAt`, and nullable `replacedByTokenId`.
+
+| Operation | Behavior |
+| --- | --- |
+| `create(id, sessionId, tokenHash, now, expiresAt)` | Creates an unconsumed token record |
+| `isConsumed()` | Identifies a previously used token, including after its expiration |
+| `isUsableAt(now)` | Requires an unconsumed token and `createdAt <= now < expiresAt` |
+| `consume(replacementTokenId, now)` | Returns consumed state linked to a replacement; rejects reuse and expiration |
+
+IDs, including an optional replacement ID, must be UUIDv7. Expiration must follow creation. Consumption time and replacement ID must either both be present or both be absent. Consumption must occur on or after creation and strictly before expiration. A token cannot name itself as its replacement.
+
+`tokenHash` uses the agreed SHA-256 digest encoded as exactly 64 lowercase hexadecimal characters (`TOKEN_HASH_LENGTH`). The constructor validates that representation; it neither computes the digest nor proves that the input came from a securely generated secret. Infrastructure generates and hashes the raw credential. The domain stores only the digest, and `toString()` omits it.
+
+These checks concern one token record. Session/user checks, replacement membership in the same session, expiration bounded by the session's absolute deadline, and detection of a reused credential require application services. Consumption does not itself create a replacement or revoke a session.
+
 ### Organization — tenant
 
 `tenancy.domain.Organization` contains `id`, `name`, `createdAt`, and `updatedAt`.
@@ -85,7 +119,7 @@ Every transition preserves membership ID, organization ID, user ID, and creation
 
 These operations enforce local state rules. They do not establish the caller's permission: an application service must check tenant membership, the role matrix, target role restrictions, and the last-owner rule before invoking them.
 
-All three entities compare equality by ID. Comparing two objects with `equals` does not compare their current state.
+All domain entities compare equality by ID. Comparing two objects with `equals` does not compare their current state. Their state transitions return immutable snapshots that the application must persist.
 
 ## 3. PostgreSQL data model
 
@@ -116,8 +150,13 @@ Use Java `Instant` and PostgreSQL `timestamptz`. PostgreSQL stores instants with
 ## 4. Module ownership and persistence mapping
 
 ```text
+common/
+  Validation.java
+
 identity/
   domain/User.java
+  domain/AuthSession.java
+  domain/RefreshToken.java
   infrastructure/persistence/UserEntity.java
 
 tenancy/
@@ -128,7 +167,7 @@ tenancy/
   infrastructure/persistence/MembershipEntity.java
 ```
 
-Identity owns `users`. Tenancy owns `organizations` and `memberships`. Membership stores `userId` as a UUID, with no JPA association to `UserEntity`. Tenant references also stay as IDs, avoiding implicit loading of entire object graphs. Database foreign keys still protect referential integrity in the monolith.
+Identity owns users, login sessions, and refresh tokens; only `users` currently has a table and persistence mapping. Tenancy owns `organizations` and `memberships`. Relationships in the domain use UUID references: membership and session hold `userId`, and a refresh token holds `sessionId`. Membership has no JPA association to `UserEntity`. Tenant references also stay as IDs, avoiding implicit loading of entire object graphs. Database foreign keys still protect the persisted relationships in the monolith.
 
 Each persistence class maps only its own domain class. Application services should depend on repository interfaces that return domain objects; persistence adapters will use the JPA mappings internally. Request and response DTOs are another boundary, especially because both user models contain a password hash.
 
@@ -146,9 +185,11 @@ PostgreSQL check constraints cannot safely enforce conditions depending on other
 
 Every tenant query must include the requested organization ID, including lookups by membership ID and list/count queries. Foreign keys and UUIDs do not authorize a request. Row-level security is not configured by this migration.
 
+For authentication, application services must validate the current user and session before accepting an access JWT or refreshing a token. The JWT's `sub` must match the session's `userId`. Token consumption and replacement insertion require one transaction with concurrency control. A replay response must commit any session revocation before reporting rejection; throwing an exception that rolls back that transaction would undo the revocation. Session activity updates must never overwrite a concurrent revocation or move `lastSeenAt` backward. These services and concurrency controls are not implemented by the domain classes.
+
 ## 6. Validation
 
-Run the domain and mapping tests without starting the Spring application:
+New tests are deferred at the user's request. The following existing tests cover the original user and tenancy models, not `AuthSession` or `RefreshToken`. Run them without starting the Spring application:
 
 ```bash
 ./gradlew test --tests '*UserTest' --tests '*TenancyModelTest' --tests '*ModelMappingTest'
