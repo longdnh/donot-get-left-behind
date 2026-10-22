@@ -1,5 +1,7 @@
 package com.longdnh.donot_get_left_behind.tenancy.domain;
 
+import static com.longdnh.donot_get_left_behind.common.Validation.requireUuidV7;
+
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
@@ -77,14 +79,6 @@ public final class Membership {
         if (changedAt.isBefore(updatedAt)) {
             throw new IllegalArgumentException("changedAt must not precede updatedAt");
         }
-    }
-
-    private static UUID requireUuidV7(UUID id, String fieldName) {
-        Objects.requireNonNull(id, fieldName + " is required");
-        if (id.version() != 7 || id.variant() != 2) {
-            throw new IllegalArgumentException(fieldName + " must be an RFC 9562 UUIDv7");
-        }
-        return id;
     }
 
     @Override

@@ -1,5 +1,8 @@
 package com.longdnh.donot_get_left_behind.identity.domain;
 
+import static com.longdnh.donot_get_left_behind.common.Validation.requireNonBlank;
+import static com.longdnh.donot_get_left_behind.common.Validation.requireUuidV7;
+
 import java.time.Instant;
 import java.util.Locale;
 import java.util.Objects;
@@ -29,7 +32,7 @@ public final class User {
      */
     public User(UUID id, String email, String passwordHash, UserStatus status,
                 Instant createdAt, Instant updatedAt) {
-        this.id = requireUuidV7(id);
+        this.id = requireUuidV7(id, "id");
         this.email = requireNonBlank(email, "email").strip().toLowerCase(Locale.ROOT);
         if (this.email.codePointCount(0, this.email.length()) > MAX_EMAIL_LENGTH) {
             throw new IllegalArgumentException("email must not exceed " + MAX_EMAIL_LENGTH + " characters");
@@ -65,21 +68,5 @@ public final class User {
     @Override
     public String toString() {
         return "User{id=" + id + ", status=" + status + "}";
-    }
-
-    private static UUID requireUuidV7(UUID id) {
-        Objects.requireNonNull(id, "id is required");
-        if (id.version() != 7 || id.variant() != 2) {
-            throw new IllegalArgumentException("id must be an RFC 9562 UUIDv7");
-        }
-        return id;
-    }
-
-    private static String requireNonBlank(String value, String fieldName) {
-        Objects.requireNonNull(value, fieldName + " is required");
-        if (value.isBlank()) {
-            throw new IllegalArgumentException(fieldName + " must not be blank");
-        }
-        return value;
     }
 }

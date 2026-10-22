@@ -1,5 +1,8 @@
 package com.longdnh.donot_get_left_behind.tenancy.domain;
 
+import static com.longdnh.donot_get_left_behind.common.Validation.requireNonBlank;
+import static com.longdnh.donot_get_left_behind.common.Validation.requireUuidV7;
+
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
@@ -17,14 +20,8 @@ public final class Organization {
     private final Instant updatedAt;
 
     public Organization(UUID id, String name, Instant createdAt, Instant updatedAt) {
-        this.id = Objects.requireNonNull(id, "id is required");
-        if (id.version() != 7 || id.variant() != 2) {
-            throw new IllegalArgumentException("id must be an RFC 9562 UUIDv7");
-        }
-        this.name = Objects.requireNonNull(name, "name is required").strip();
-        if (this.name.isBlank()) {
-            throw new IllegalArgumentException("name must not be blank");
-        }
+        this.id = requireUuidV7(id, "id");
+        this.name = requireNonBlank(name, "name").strip();
         if (this.name.codePointCount(0, this.name.length()) > MAX_NAME_LENGTH) {
             throw new IllegalArgumentException("name must not exceed " + MAX_NAME_LENGTH + " characters");
         }
