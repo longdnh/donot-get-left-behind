@@ -2,7 +2,7 @@
 
 This is the model foundation for the generic multi-tenant authentication backend described in [the authentication design](authentication-authorization.md). A global user connects to organizations through memberships. Authentication also has a login session and the refresh tokens issued for that session.
 
-Domain classes, JPA mappings, and the initial Flyway migration are defined for users, organizations, and memberships. `AuthSession` and `RefreshToken` currently have domain models only; their persistence mappings and tables are not implemented. Application services, repositories, HTTP endpoints, token generation/hashing/signing, and UUID generation are separate implementation steps.
+Domain classes, JPA mappings, and the initial Flyway migration are defined for users, organizations, and memberships. User persistence, the registration service and input policy, UUIDv7 generation, and password hashing are implemented. `AuthSession` and `RefreshToken` currently have domain models only; their persistence mappings and tables are not implemented. Remaining application services and repositories, HTTP endpoints, and refresh/access-token generation are separate implementation steps.
 
 ## 1. Domain model versus data model
 
@@ -145,6 +145,8 @@ All IDs are UUIDv7, supplied to the domain constructors by the application. The 
 
 PostgreSQL 18 provides `uuidv7()` and `uuid_extract_version()`. The migration uses `CHECK ((uuid_extract_version(id) = 7) IS TRUE)` so UUIDs of another variant, for which extraction returns null, are also rejected. UUID generation remains an infrastructure responsibility; it is not implemented by these models. [PostgreSQL UUID functions](https://www.postgresql.org/docs/18/functions-uuid.html)
 
+The `IdGenerator` application port now has a `UuidV7Generator` adapter, backed by Java UUID Generator's `timeBasedEpochGenerator()`. It reuses a thread-safe generator instance. Registration obtains its explicit timestamp from an injected UTC `Clock`. [Java UUID Generator](https://github.com/cowtowncoder/java-uuid-generator)
+
 Use Java `Instant` and PostgreSQL `timestamptz`. PostgreSQL stores instants with microsecond precision and renders them using the connection's time zone; it does not preserve the original zone name. Use UTC at application boundaries, and account for precision when comparing persisted timestamps. The explicit `createdAt` field remains the creation timestamp; do not substitute the UUID timestamp. [PostgreSQL timestamp types](https://www.postgresql.org/docs/18/datatype-datetime.html)
 
 ## 4. Module ownership and persistence mapping
@@ -157,7 +159,18 @@ identity/
   domain/User.java
   domain/AuthSession.java
   domain/RefreshToken.java
+  application/RegisterService.java
+  application/RegistrationPolicy.java
+  application/EmailAlreadyExistsException.java
+  application/port/UserRepository.java
+  application/port/IdGenerator.java
+  application/port/PasswordHasher.java
   infrastructure/persistence/UserEntity.java
+  infrastructure/persistence/SpringDataUserRepository.java
+  infrastructure/persistence/UserRepositoryAdapter.java
+  infrastructure/security/UuidV7Generator.java
+  infrastructure/security/SpringPasswordHasher.java
+  infrastructure/configuration/IdentityConfiguration.java
 
 tenancy/
   domain/Organization.java
@@ -170,6 +183,18 @@ tenancy/
 Identity owns users, login sessions, and refresh tokens; only `users` currently has a table and persistence mapping. Tenancy owns `organizations` and `memberships`. Relationships in the domain use UUID references: membership and session hold `userId`, and a refresh token holds `sessionId`. Membership has no JPA association to `UserEntity`. Tenant references also stay as IDs, avoiding implicit loading of entire object graphs. Database foreign keys still protect the persisted relationships in the monolith.
 
 Each persistence class maps only its own domain class. Application services should depend on repository interfaces that return domain objects; persistence adapters will use the JPA mappings internally. Request and response DTOs are another boundary, especially because both user models contain a password hash.
+
+The user persistence flow is defined by three types:
+
+1. `UserRepository` is the application port. It exposes `findById`, `findByEmail`, `create`, and `save` using domain `User` objects and no Spring or JPA types. Lookup results are `Optional<User>`. `create` is insert-only and reports a duplicate email with `EmailAlreadyExistsException`.
+2. `SpringDataUserRepository` extends `JpaRepository<UserEntity, UUID>`. Spring Data provides the implementation and derives the email query from `findByEmail`.
+3. `UserRepositoryAdapter` implements the port, delegates database access, and converts through `UserEntity.fromDomain` and `toDomain`. Constructor injection supplies the Spring Data repository and JPA `EntityManager`. Read operations run in read-only transactions; `create` and `save` use write transactions. A surrounding application-service transaction can encompass multiple repository calls. See [Spring Data transactions](https://docs.spring.io/spring-data/jpa/reference/jpa/transactions.html).
+
+`findByEmail` expects an already-canonical email: the application must strip whitespace and lowercase using `Locale.ROOT` before calling it. The adapter performs an exact lookup. It returns disabled users too so the application can check their status. The database's unique-email constraint remains necessary even when registration first checks for an existing account.
+
+`save` maps the entity returned by Spring Data back to the domain. With the current assigned UUID and no version field, Spring Data uses `merge`; a new user can incur a lookup before insertion. SQL execution and constraint violations may be deferred until flush or commit. Registration uses the separate `create` operation: `EntityManager.persist` prevents updates to an existing account, and `flush` surfaces the non-deferrable unique-email violation inside the adapter for translation. See [Spring Data entity persistence](https://docs.spring.io/spring-data/jpa/reference/jpa/entity-persistence.html).
+
+`RegisterService` validates input and checks email availability before hashing the password. It creates an active domain user with an application-generated UUIDv7 and timestamp, calls `create`, and returns only the user's ID. Its dependencies are provided through constructor injection. `IdentityConfiguration` supplies a UTC clock, a Spring password encoder, and the registration policy with its local blocklist. Password hashing is delegated through `PasswordHasher`; algorithm and provider dependencies stay in infrastructure. This step has no HTTP endpoint, session creation, or role assignment.
 
 ## 5. Rules that require application services
 

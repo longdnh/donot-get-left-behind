@@ -1,6 +1,6 @@
 # Simple multi-tenant authentication and authorization
 
-Status: proposed design. The APIs and security controls below are not implemented yet.
+Status: proposed API design. The registration application service, input policy, UUIDv7 generation, password hashing, and user persistence are implemented. HTTP endpoints, rate limiting, and login/session security are not implemented yet.
 
 Authentication direction has since changed to access JWTs backed by application-owned sessions and rotating refresh tokens. Their [domain models](data-and-domain-model.md#authsession--one-login) are defined. The servlet-session login, cookie, and CSRF contracts below describe the earlier proposal and will need revision when implementing the application and HTTP layers.
 
@@ -67,6 +67,14 @@ Permissions are a fixed mapping in application code for this version. Separate r
 ## 4. Authentication
 
 ### Registration and passwords
+
+The implemented entry point is `RegisterService.register(email, rawPassword)`, returning the created user's UUID. `RegistrationPolicy` canonicalizes and validates email with Jakarta Bean Validation's `@Email`, checks the 15–128 code-point password limit, and checks a case-insensitive local blocklist. Password hashing receives the original input, including spaces and case. The blocklist at `src/main/resources/security/common-passwords.txt` is a small starter list for this learning project, not a comprehensive breach corpus. Email validation checks syntax; it does not verify mailbox ownership.
+
+The service uses `IdGenerator`, `PasswordHasher`, `UserRepository`, and an injected UTC `Clock`. Infrastructure supplies UUIDv7 through Java UUID Generator and salted Argon2id hashes through Spring Security. Stored hashes carry the `{argon2}` encoder identifier and the Argon2 parameters and salt. The configured costs are 19 MiB memory, 2 iterations, and parallelism 1. [Java UUID Generator](https://github.com/cowtowncoder/java-uuid-generator)
+
+An initial email lookup provides an early duplicate result. The insert-only `UserRepository.create` operation uses `persist` and `flush` in a write transaction, with the database's `uq_users_email` constraint resolving concurrent registrations. Both duplicate paths raise `EmailAlreadyExistsException`. Other database errors propagate separately. Password hashing runs before the write transaction starts. Registration creates neither memberships nor an authenticated session.
+
+The following HTTP behavior is planned for the next step; the service is not yet exposed through a controller.
 
 Registration accepts `{email, password}` and creates an active user with no organization or role. Reject fields such as `role`, `organizationId`, or `status`.
 
