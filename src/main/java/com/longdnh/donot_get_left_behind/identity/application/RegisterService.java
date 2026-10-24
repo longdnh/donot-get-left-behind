@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
+import com.longdnh.donot_get_left_behind.identity.application.exception.EmailAlreadyExistsException;
 import com.longdnh.donot_get_left_behind.identity.application.port.IdGenerator;
 import com.longdnh.donot_get_left_behind.identity.application.port.PasswordHasher;
 import com.longdnh.donot_get_left_behind.identity.application.port.UserRepository;
