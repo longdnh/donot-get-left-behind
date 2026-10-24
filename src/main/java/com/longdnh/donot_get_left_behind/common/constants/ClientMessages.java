@@ -14,6 +14,7 @@ public final class ClientMessages {
 
     public static final String INVALID_REGISTRATION_REQUEST =
             "Provide a JSON object with valid email and password fields only";
+    public static final String INVALID_REQUEST = "The request is invalid";
     public static final String RESOURCE_NOT_FOUND = "The requested resource was not found";
     public static final String METHOD_NOT_ALLOWED = "The HTTP method is not supported for this endpoint";
     public static final String JSON_RESPONSE_REQUIRED = "This endpoint produces application/json";
