@@ -10,7 +10,7 @@ import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.longdnh.donot_get_left_behind.identity.application.EmailAlreadyExistsException;
+import com.longdnh.donot_get_left_behind.identity.application.exception.EmailAlreadyExistsException;
 import com.longdnh.donot_get_left_behind.identity.application.port.UserRepository;
 import com.longdnh.donot_get_left_behind.identity.domain.User;
 

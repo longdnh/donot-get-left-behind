@@ -1,12 +1,12 @@
 package com.longdnh.donot_get_left_behind.identity.application;
 
-import static com.longdnh.donot_get_left_behind.common.Validation.requireNonBlank;
-
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.longdnh.donot_get_left_behind.common.constants.ClientMessages;
+import com.longdnh.donot_get_left_behind.identity.application.exception.InvalidRegistrationException;
 import com.longdnh.donot_get_left_behind.identity.domain.User;
 
 import jakarta.validation.Validator;
@@ -32,31 +32,32 @@ public final class RegistrationPolicy {
     }
 
     public String canonicalizeEmail(String email) {
-        if (email == null) {
-            throw new IllegalArgumentException("email is required");
+        if (email == null || email.isBlank()) {
+            throw new InvalidRegistrationException(ClientMessages.EMAIL_REQUIRED);
         }
-        String canonicalEmail = requireNonBlank(email, "email").strip().toLowerCase(Locale.ROOT);
+        String canonicalEmail = email.strip().toLowerCase(Locale.ROOT);
         if (canonicalEmail.codePointCount(0, canonicalEmail.length()) > User.MAX_EMAIL_LENGTH) {
-            throw new IllegalArgumentException("email must not exceed " + User.MAX_EMAIL_LENGTH + " characters");
+            throw new InvalidRegistrationException(
+                    String.format(Locale.ROOT, ClientMessages.EMAIL_TOO_LONG, User.MAX_EMAIL_LENGTH));
         }
         if (!validator.validate(new EmailInput(canonicalEmail)).isEmpty()) {
-            throw new IllegalArgumentException("email must be a valid email address");
+            throw new InvalidRegistrationException(ClientMessages.EMAIL_INVALID);
         }
         return canonicalEmail;
     }
 
     public void validatePassword(String password) {
         if (password == null) {
-            throw new IllegalArgumentException("password is required");
+            throw new InvalidRegistrationException(ClientMessages.PASSWORD_REQUIRED);
         }
         int length = password.codePointCount(0, password.length());
         if (length < MIN_PASSWORD_LENGTH || length > MAX_PASSWORD_LENGTH) {
-            throw new IllegalArgumentException("password must contain between "
-                    + MIN_PASSWORD_LENGTH + " and " + MAX_PASSWORD_LENGTH + " characters");
+            throw new InvalidRegistrationException(String.format(Locale.ROOT,
+                    ClientMessages.PASSWORD_LENGTH_OUT_OF_RANGE, MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH));
         }
         // Case folding is only for the blocklist comparison; the original password is hashed.
         if (blockedPasswords.contains(password.toLowerCase(Locale.ROOT))) {
-            throw new IllegalArgumentException("password is too common");
+            throw new InvalidRegistrationException(ClientMessages.PASSWORD_TOO_COMMON);
         }
     }
 
