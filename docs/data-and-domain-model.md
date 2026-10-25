@@ -183,9 +183,12 @@ identity/
   web/RegisterRequest.java
   web/RegisterResponse.java
   web/CsrfResponse.java
-  web/ApiError.java
-  web/ApiErrorWriter.java
-  web/AuthExceptionHandler.java
+
+web/error/
+  ApiError.java
+  ApiErrorWriter.java
+  GlobalExceptionHandler.java
+  ExceptionHandlingFilter.java
 
 tenancy/
   domain/Organization.java
@@ -199,7 +202,7 @@ Identity owns users, login sessions, and refresh tokens; only `users` currently 
 
 Each persistence class maps only its own domain class. Application services should depend on repository interfaces that return domain objects; persistence adapters will use the JPA mappings internally. Request and response DTOs are another boundary, especially because both user models contain a password hash.
 
-Identity application exceptions are grouped in `identity.application.exception`. This package contains only exception types and has no Spring or HTTP dependencies. `AuthExceptionHandler` belongs to `identity.web`, where it translates those exceptions into HTTP responses. Future module-specific exceptions should follow the same structure within their owning module.
+Identity application exceptions are grouped in `identity.application.exception`. This package contains only exception types and has no Spring or HTTP dependencies. `GlobalExceptionHandler` belongs to the project-wide `web.error` package, where it translates those exceptions into HTTP responses. Future module-specific exceptions should follow the same structure within their owning module.
 
 The user persistence flow is defined by three types:
 

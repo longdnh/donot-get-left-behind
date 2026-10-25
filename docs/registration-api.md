@@ -93,7 +93,9 @@ The registration limiter permits 10 attempts per connection IP in a fixed one-ho
 3. `WebConfiguration` configures strict Jackson 3 parsing, including rejecting unknown fields and numeric/boolean values for strings.
 4. `AuthController` receives `RegisterRequest` through `@RequestBody`, invokes Bean Validation through `@Valid`, and delegates to `RegisterService`.
 5. `RegisterService` performs the existing validation, hashing, UUIDv7 generation, and insert workflow.
-6. `RegisterResponse` exposes only `userId`. `AuthExceptionHandler` handles application and MVC errors; `ApiErrorWriter` handles security-filter errors, which occur before the controller.
+6. `RegisterResponse` exposes only `userId`. The project-wide `web.error.GlobalExceptionHandler` handles application and MVC errors for all controllers. `ApiErrorWriter` also writes security-filter errors.
+
+`web.error.ExceptionHandlingFilter` is registered once as a servlet filter before Spring Security. It catches unhandled exceptions from the downstream synchronous filter chain and delegates to Spring MVC's `HandlerExceptionResolver`, reusing the global exception mappings. An unresolved exception produces a generic `500 INTERNAL_ERROR`. The filter preserves security handlers' normal `401`/`403` responses and never writes a second response once the response is committed. Direct I/O failures are rethrown; asynchronous/background work and container errors outside this filter's invocation are outside its scope. Framework input errors now use the general `INVALID_REQUEST` message, while explicit registration-policy errors retain their specific messages.
 
 Request DTO `toString()` output redacts credentials, and password serialization is disabled. Errors omit rejected values and parser/database exception messages. A `record` is used for each DTO to provide immutable fields and accessors such as `request.email()`.
 
