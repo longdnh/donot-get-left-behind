@@ -86,6 +86,8 @@ The current project password policy accepts 10–128 Unicode code points, includ
 
 ### Login, sessions, refresh, and logout — planned
 
+The [authentication implementation guide](authentication-implementation.md) describes the login, protected-request, refresh, and logout flows, transaction boundaries, and suggested configuration code. It is a guide for user implementation, not a statement that these features exist. Use one validated infrastructure configuration record for timeout settings; a separate `SessionPolicy` class is unnecessary at this stage.
+
 1. Login accepts `{email, password}` and checks credentials and current account status.
 2. Return the same `401 Invalid credentials` for an unknown user, incorrect password, or disabled account. Perform a dummy hash comparison for unknown users to avoid an obvious timing difference.
 3. On success, create a new `AuthSession`, store a refresh-token hash, issue a five-minute access JWT, and set the refresh-token cookie. Access-token claims include `sub`, `sid`, `iss`, `aud`, `iat`, and `exp`.
@@ -220,7 +222,7 @@ Use policy unit tests, Spring Security integration tests for JWTs/CSRF, and Post
 ## 9. Implementation order
 
 1. Completed: the three initial tables, registration service and HTTP API, password hashing, CSRF endpoint, and registration throttling.
-2. Next: session and refresh-token persistence, followed by login, `/auth/me`, refresh, logout, JWT validation, and login throttling.
+2. Next: validated authentication configuration and session/refresh-token persistence; then token generation, login with throttling, JWT/session validation and `/auth/me`, refresh rotation, and logout. Follow the [implementation guide](authentication-implementation.md).
 3. Implement organization creation and membership-aware listing.
 4. Implement the role matrix, member management, and last-owner checks.
 5. Run the authentication, tenant-isolation, and permission tests above.
