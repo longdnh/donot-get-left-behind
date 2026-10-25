@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
@@ -21,6 +22,7 @@ import com.longdnh.donot_get_left_behind.identity.application.RegistrationPolicy
 import jakarta.validation.Validator;
 
 @Configuration(proxyBeanMethods = false)
+@EnableConfigurationProperties(AuthProperties.class)
 public class IdentityConfiguration {
 
     @Bean
