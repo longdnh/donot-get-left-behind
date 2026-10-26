@@ -16,8 +16,18 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
+import com.longdnh.donot_get_left_behind.identity.application.LoginService;
 import com.longdnh.donot_get_left_behind.identity.application.RegistrationPolicy;
+import com.longdnh.donot_get_left_behind.identity.application.port.AccessTokenIssuer;
+import com.longdnh.donot_get_left_behind.identity.application.port.AuthSessionRepository;
+import com.longdnh.donot_get_left_behind.identity.application.port.IdGenerator;
+import com.longdnh.donot_get_left_behind.identity.application.port.PasswordHasher;
+import com.longdnh.donot_get_left_behind.identity.application.port.RefreshTokenGenerator;
+import com.longdnh.donot_get_left_behind.identity.application.port.RefreshTokenRepository;
+import com.longdnh.donot_get_left_behind.identity.application.port.UserRepository;
 
 import jakarta.validation.Validator;
 
@@ -32,7 +42,8 @@ public class IdentityConfiguration {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        // Salt/hash sizes are bytes; memory is KiB: 19 MiB, two iterations, parallelism one.
+        // Salt/hash sizes are bytes; memory is KiB: 19 MiB, two iterations, parallelism
+        // one.
         PasswordEncoder argon2 = new Argon2PasswordEncoder(16, 32, 1, 19 * 1024, 2);
         return new DelegatingPasswordEncoder("argon2", Map.of("argon2", argon2));
     }
@@ -48,4 +59,35 @@ public class IdentityConfiguration {
             return new RegistrationPolicy(validator, blockedPasswords);
         }
     }
+
+    @Bean
+    public LoginService loginService(
+            UserRepository userRepository,
+            AuthSessionRepository sessionRepository,
+            RefreshTokenRepository refreshTokenRepository,
+            PasswordHasher passwordHasher,
+            RefreshTokenGenerator refreshTokenGenerator,
+            AccessTokenIssuer accessTokenIssuer,
+            IdGenerator idGenerator,
+            Clock clock,
+            AuthProperties properties,
+            PlatformTransactionManager transactionManager) {
+
+        String dummyPasswordHash = passwordHasher.hash(refreshTokenGenerator.generate());
+
+        return new LoginService(
+                userRepository,
+                sessionRepository,
+                refreshTokenRepository,
+                passwordHasher,
+                refreshTokenGenerator,
+                accessTokenIssuer,
+                idGenerator,
+                clock,
+                properties.accessTokenLifetime(),
+                properties.absoluteLifetime(),
+                dummyPasswordHash,
+                new TransactionTemplate(transactionManager));
+    }
+
 }

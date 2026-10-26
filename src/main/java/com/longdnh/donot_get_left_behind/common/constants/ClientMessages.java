@@ -25,6 +25,7 @@ public final class ClientMessages {
     public static final String CSRF_TOKEN_REQUIRED = "A valid CSRF token is required";
     public static final String ACCESS_DENIED = "Access is denied";
     public static final String REGISTRATION_RATE_LIMITED = "Too many registration attempts. Try again later";
+    public static final String INVALID_CREDENTIALS = "Invalid email or password";
 
     private ClientMessages() {
     }

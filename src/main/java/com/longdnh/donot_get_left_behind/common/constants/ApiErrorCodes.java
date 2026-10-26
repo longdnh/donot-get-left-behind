@@ -15,6 +15,7 @@ public final class ApiErrorCodes {
     public static final String CSRF_INVALID = "CSRF_INVALID";
     public static final String FORBIDDEN = "FORBIDDEN";
     public static final String RATE_LIMITED = "RATE_LIMITED";
+    public static final String INVALID_CREDENTIALS = "INVALID_CREDENTIALS";
 
     private ApiErrorCodes() {
     }
