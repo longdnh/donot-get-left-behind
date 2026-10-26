@@ -1,4 +1,4 @@
-package com.longdnh.donot_get_left_behind.identity.infrastructure.persistence;
+package com.longdnh.donot_get_left_behind.identity.infrastructure.persistence.adapter;
 
 import static com.longdnh.donot_get_left_behind.common.Validation.requireNonBlank;
 import static com.longdnh.donot_get_left_behind.common.Validation.requireUuidV7;
@@ -13,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.longdnh.donot_get_left_behind.identity.application.exception.EmailAlreadyExistsException;
 import com.longdnh.donot_get_left_behind.identity.application.port.UserRepository;
 import com.longdnh.donot_get_left_behind.identity.domain.User;
+import com.longdnh.donot_get_left_behind.identity.infrastructure.persistence.SpringDataUserRepository;
+import com.longdnh.donot_get_left_behind.identity.infrastructure.persistence.UserEntity;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceException;
