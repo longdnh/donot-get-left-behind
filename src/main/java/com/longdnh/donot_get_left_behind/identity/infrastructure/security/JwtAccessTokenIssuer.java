@@ -12,10 +12,12 @@ import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
+import org.springframework.stereotype.Component;
 
 import com.longdnh.donot_get_left_behind.identity.application.port.AccessTokenIssuer;
 import com.longdnh.donot_get_left_behind.identity.infrastructure.configuration.AuthProperties;
 
+@Component 
 public final class JwtAccessTokenIssuer implements AccessTokenIssuer {
     private final JwtEncoder jwtEncoder;
     private final AuthProperties authProperties;
@@ -41,7 +43,7 @@ public final class JwtAccessTokenIssuer implements AccessTokenIssuer {
                 .issuer(authProperties.issuer())
                 .audience(List.of(authProperties.audience()))
                 .subject(userId.toString())
-                .claim("sid", sessionId)
+                .claim("sid", sessionId.toString())
                 .issuedAt(issuedAt)
                 .expiresAt(expiresAt)
                 .build();
