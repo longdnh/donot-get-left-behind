@@ -7,6 +7,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
 import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 @Validated 
@@ -20,7 +21,13 @@ public record AuthProperties(
     Duration idleTimeout,
 
     @NotNull @DurationMin(inclusive = false)
-    Duration absoluteLifetime
+    Duration absoluteLifetime,
+
+    @NotBlank
+    String issuer,
+
+    @NotBlank
+    String audience
 
 ) {
     @AssertTrue (message = "Access-token lifetime and idle timeout must not exceed absolute lifetime")
