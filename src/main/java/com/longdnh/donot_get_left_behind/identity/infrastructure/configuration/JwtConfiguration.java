@@ -61,7 +61,7 @@ public class JwtConfiguration {
 
     @Bean
     public JwtDecoder jwtDecoder(
-            @Value("{app.auth.jwt-public-key}") Resource publicKeyResource,
+            @Value("${app.auth.jwt-public-key}") Resource publicKeyResource,
             AuthProperties properties,
             Clock clock) throws IOException {
         RSAPublicKey publicKey;
