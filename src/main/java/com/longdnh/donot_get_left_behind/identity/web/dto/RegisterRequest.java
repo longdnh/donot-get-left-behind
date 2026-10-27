@@ -1,4 +1,4 @@
-package com.longdnh.donot_get_left_behind.identity.web;
+package com.longdnh.donot_get_left_behind.identity.web.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.longdnh.donot_get_left_behind.common.constants.ClientMessages;
