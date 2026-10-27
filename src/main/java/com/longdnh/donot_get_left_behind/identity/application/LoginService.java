@@ -91,7 +91,7 @@ public class LoginService {
         RefreshToken refreshToken = RefreshToken.create(
                 idGenerator.generate(),
                 session.getId(),
-                rawRefreshToken,
+                refreshTokenGenerator.hash(rawRefreshToken),
                 now,
                 session.getAbsoluteExpiresAt());
 

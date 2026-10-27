@@ -35,7 +35,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> unexpectedFailure(Exception exception) {
-        // Exception messages may contain SQL details or credentials; log only the type here.
+        // Exception messages may contain SQL details or credentials; log only the type
+        // here.
         logger.error("Unhandled request exception type: " + exception.getClass().getName());
         return error(HttpStatus.INTERNAL_SERVER_ERROR, ApiErrorCodes.INTERNAL_ERROR, ClientMessages.REQUEST_FAILED);
     }
@@ -53,10 +54,19 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return error(HttpStatus.FORBIDDEN, ApiErrorCodes.FORBIDDEN, ClientMessages.ACCESS_DENIED);
     }
 
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ApiError> invalidCredentials() {
+        return error(
+                HttpStatus.UNAUTHORIZED,
+                ApiErrorCodes.INVALID_CREDENTIALS,
+                ClientMessages.INVALID_CREDENTIALS);
+    }
+
     @Override
     protected ResponseEntity<Object> createResponseEntity(
             @Nullable Object body, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
-        // Framework exceptions may contain rejected passwords or parser excerpts: use fixed messages.
+        // Framework exceptions may contain rejected passwords or parser excerpts: use
+        // fixed messages.
         ApiError error = switch (status.value()) {
             case 400 -> new ApiError(ApiErrorCodes.INVALID_REQUEST, ClientMessages.INVALID_REQUEST);
             case 404 -> new ApiError(ApiErrorCodes.NOT_FOUND, ClientMessages.RESOURCE_NOT_FOUND);

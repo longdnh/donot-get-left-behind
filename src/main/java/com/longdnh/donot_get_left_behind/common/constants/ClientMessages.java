@@ -26,6 +26,7 @@ public final class ClientMessages {
     public static final String ACCESS_DENIED = "Access is denied";
     public static final String REGISTRATION_RATE_LIMITED = "Too many registration attempts. Try again later";
     public static final String INVALID_CREDENTIALS = "Invalid email or password";
+    public static final String LOGIN_INPUT_TOO_LONG = "Login input is too long";
 
     private ClientMessages() {
     }
