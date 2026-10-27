@@ -1,0 +1,97 @@
+package com.longdnh.donot_get_left_behind.identity.infrastructure.security;
+
+import static com.longdnh.donot_get_left_behind.common.Validation.requireUuidV7;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.stereotype.Component;
+
+import com.longdnh.donot_get_left_behind.common.constants.ClientMessages;
+import com.longdnh.donot_get_left_behind.identity.application.port.AuthSessionRepository;
+import com.longdnh.donot_get_left_behind.identity.application.port.UserRepository;
+import com.longdnh.donot_get_left_behind.identity.infrastructure.configuration.AuthProperties;
+
+import lombok.RequiredArgsConstructor;
+
+@Component
+@RequiredArgsConstructor
+public class SessionJwtAuthenticationConverter implements Converter<Jwt, AbstractAuthenticationToken> {
+
+    private final AuthSessionRepository sessionRepository;
+    private final UserRepository userRepository;
+    private final AuthProperties properties;
+    private final Clock clock;
+
+    @Override
+    public AbstractAuthenticationToken convert(Jwt jwt) {
+        UUID userId = readUuidClaim(jwt, "sub");
+        UUID sessionId = readUuidClaim(jwt, "sid");
+
+        var session = sessionRepository.findById(sessionId)
+                .orElseThrow(
+                        SessionJwtAuthenticationConverter::invalidAuthentication);
+
+        Instant now = clock.instant();
+
+        if (!session.getUserId().equals(userId)
+                || !session.isActiveAt(now, properties.idleTimeout())) {
+            throw invalidAuthentication();
+        }
+
+        var user = userRepository.findById(userId)
+                .orElseThrow(
+                        SessionJwtAuthenticationConverter::invalidAuthentication);
+
+        if (!user.isActive()) {
+            throw invalidAuthentication();
+        }
+
+        boolean recorded = sessionRepository.recordActivityIfActive(
+                sessionId,
+                userId,
+                clock.instant(),
+                properties.idleTimeout());
+
+        if (!recorded) {
+            throw invalidAuthentication();
+        }
+
+        return new JwtAuthenticationToken(
+                jwt,
+                List.of(),
+                userId.toString());
+    }
+
+    private static UUID readUuidClaim(Jwt jwt, String name) {
+        Object value = jwt.getClaims().get(name);
+
+        if (!(value instanceof String text)) {
+            throw invalidAuthentication();
+        }
+
+        try {
+            UUID id = UUID.fromString(text);
+
+            if (!id.toString().equals(text)) {
+                throw invalidAuthentication();
+            }
+
+            return requireUuidV7(id, name);
+        } catch (IllegalArgumentException exception) {
+            throw invalidAuthentication();
+        }
+    }
+
+    private static BadCredentialsException invalidAuthentication() {
+        return new BadCredentialsException(
+                ClientMessages.AUTHENTICATION_REQUIRED);
+    }
+}
