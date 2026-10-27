@@ -21,6 +21,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfException;
 import org.springframework.security.web.csrf.CsrfFilter;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
 
 @Configuration(proxyBeanMethods = false)
 public class SecurityConfiguration {
@@ -29,20 +30,21 @@ public class SecurityConfiguration {
   public SecurityFilterChain securityFilterChain(
       HttpSecurity http, ApiErrorWriter errorWriter, Clock clock,
       @Value("${app.security.csrf.secure-cookie:true}") boolean secureCookie,
+      CsrfTokenRepository csrfTokenRepository,
       @Value("${app.security.registration.max-attempts:10}") int maxAttempts,
       @Value("${app.security.registration.window-seconds:3600}")
       long windowSeconds, JwtDecoder jwtDecoder,
       SessionJwtAuthenticationConverter sessionJwtAuthenticationConverter)
       throws Exception {
-    CookieCsrfTokenRepository csrfTokens = new CookieCsrfTokenRepository();
-    csrfTokens.setHeaderName("X-CSRF-TOKEN");
-    csrfTokens.setCookieCustomizer(cookie
-                                   -> cookie.httpOnly(true)
-                                          .secure(secureCookie)
-                                          .sameSite("Lax")
-                                          .path("/"));
+    // CookieCsrfTokenRepository csrfTokens = new CookieCsrfTokenRepository();
+    // csrfTokens.setHeaderName("X-CSRF-TOKEN");
+    // csrfTokens.setCookieCustomizer(cookie
+    //                                -> cookie.httpOnly(true)
+    //                                       .secure(secureCookie)
+    //                                       .sameSite("Lax")
+    //                                       .path("/"));
 
-    return http.csrf(csrf -> csrf.csrfTokenRepository(csrfTokens))
+    return http.csrf(csrf -> csrf.csrfTokenRepository(csrfTokenRepository))
         .sessionManagement(
             session
             -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -105,5 +107,21 @@ public class SecurityConfiguration {
                                                 ClientMessages.ACCESS_DENIED)))
 
         .build();
+  }
+  @Bean
+  public CsrfTokenRepository csrfTokenRepository(
+      @Value("${app.security.csrf.secure-cookie:true}") boolean secureCookie) {
+
+    CookieCsrfTokenRepository repository = new CookieCsrfTokenRepository();
+
+    repository.setHeaderName("X-CSRF-TOKEN");
+
+    repository.setCookieCustomizer(cookie
+                                   -> cookie.httpOnly(true)
+                                          .secure(secureCookie)
+                                          .sameSite("Lax")
+                                          .path("/"));
+
+    return repository;
   }
 }
