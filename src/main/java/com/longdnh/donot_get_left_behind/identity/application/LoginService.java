@@ -95,7 +95,7 @@ public class LoginService {
                 now,
                 session.getAbsoluteExpiresAt());
 
-        Instant accessExpiresAt = now.plus(absoluteLifetime);
+        Instant accessExpiresAt = now.plus(accessTokenLifetime);
 
         if (accessExpiresAt.isAfter(session.getAbsoluteExpiresAt())) {
             accessExpiresAt = session.getAbsoluteExpiresAt();
