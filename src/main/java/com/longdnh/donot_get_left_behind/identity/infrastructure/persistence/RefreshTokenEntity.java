@@ -15,19 +15,10 @@ import lombok.Getter;
 
 @Getter
 @Entity
-@Table(
-    name = "refresh_tokens",
-    uniqueConstraints = {
-        @UniqueConstraint(
-            name = "uq_refresh_tokens_hash",
-            columnNames = "token_hash"
-        ),
-        @UniqueConstraint(
-            name = "uq_refresh_tokens_session_id",
-            columnNames = {"session_id", "id"}
-        )
-    }
-)
+@Table(name = "refresh_tokens", uniqueConstraints = {
+        @UniqueConstraint(name = "uq_refresh_tokens_hash", columnNames = "token_hash"),
+        @UniqueConstraint(name = "uq_refresh_tokens_session_id", columnNames = { "session_id", "id" })
+})
 public class RefreshTokenEntity {
 
     @Id
@@ -37,12 +28,7 @@ public class RefreshTokenEntity {
     @Column(name = "session_id", nullable = false, updatable = false)
     private UUID sessionId;
 
-    @Column(
-        name = "token_hash",
-        nullable = false,
-        updatable = false,
-        length = RefreshToken.TOKEN_HASH_LENGTH
-    )
+    @Column(name = "token_hash", nullable = false, updatable = false, length = RefreshToken.TOKEN_HASH_LENGTH)
     private String tokenHash;
 
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -83,7 +69,13 @@ public class RefreshTokenEntity {
                 createdAt,
                 expiresAt,
                 consumedAt,
-                replacedByTokenId
-        );
+                replacedByTokenId);
+    }
+
+    public void consume(UUID replacementTokenId, Instant now) {
+        RefreshToken consumed = this.toDomain().consume(replacementTokenId, now);
+
+        this.consumedAt = consumed.getConsumedAt();
+        this.replacedByTokenId = consumed.getReplacedByTokenId();
     }
 }

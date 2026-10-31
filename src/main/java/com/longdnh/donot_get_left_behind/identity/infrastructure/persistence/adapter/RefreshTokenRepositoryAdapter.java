@@ -1,5 +1,10 @@
 package com.longdnh.donot_get_left_behind.identity.infrastructure.persistence.adapter;
 
+import static com.longdnh.donot_get_left_behind.common.Validation.requireUuidV7;
+
+import java.time.Instant;
+import java.util.UUID;
+
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -9,19 +14,40 @@ import com.longdnh.donot_get_left_behind.identity.infrastructure.persistence.Ref
 
 import jakarta.persistence.EntityManager;
 
-@Repository 
+@Repository
 public class RefreshTokenRepositoryAdapter implements RefreshTokenRepository {
     private final EntityManager entityManager;
 
-    public RefreshTokenRepositoryAdapter(EntityManager entityManager){
+    public RefreshTokenRepositoryAdapter(EntityManager entityManager) {
         this.entityManager = entityManager;
     }
 
-    @Override 
-    @Transactional 
-    public RefreshToken create(RefreshToken refreshToken){
+    @Override
+    @Transactional
+    public RefreshToken create(RefreshToken refreshToken) {
         RefreshTokenEntity refreshTokenEntity = RefreshTokenEntity.fromDomain(refreshToken);
         entityManager.persist(refreshTokenEntity);
         return refreshTokenEntity.toDomain();
+    }
+
+    @Override
+    public void consume(UUID tokenId, UUID replacementTokenId, Instant now) {
+        requireUuidV7(tokenId, "tokenId");
+        requireUuidV7(replacementTokenId, "replacementTokenId");
+
+        RefreshTokenEntity entity = entityManager.find(
+                RefreshTokenEntity.class,
+                tokenId);
+
+        if (entity == null) {
+            throw new IllegalStateException(
+
+                    "Refresh token must exist before consumption");
+        }
+
+        // push replaced token to database first
+        entityManager.flush();
+
+        entity.consume(replacementTokenId, now);
     }
 }

@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.longdnh.donot_get_left_behind.identity.application.port.AuthSessionRepository;
@@ -76,5 +77,22 @@ public class AuthSessionRepositoryAdapter implements AuthSessionRepository {
                 .executeUpdate();
 
         return updated == 1;
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void revoke(UUID sessionId, Instant now) {
+        requireUuidV7(sessionId, "sessionId");
+
+        AuthSessionEntity entity = entityManager.find(
+                AuthSessionEntity.class,
+                sessionId);
+
+        if (entity == null) {
+            throw new IllegalStateException(
+                    "Session must exist before revocation");
+        }
+
+        entity.revoke(now);
     }
 }

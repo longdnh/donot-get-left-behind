@@ -19,4 +19,5 @@ public interface AuthSessionRepository {
             Instant now,
             Duration idleTimeout);
 
+    void revoke(UUID sessionId, Instant now);
 }

@@ -30,11 +30,7 @@ public class AuthSessionEntity {
     @Column(name = "last_seen_at", nullable = false)
     private Instant lastSeenAt;
 
-    @Column(
-        name = "absolute_expires_at",
-        nullable = false,
-        updatable = false
-    )
+    @Column(name = "absolute_expires_at", nullable = false, updatable = false)
     private Instant absoluteExpiresAt;
 
     @Column(name = "revoked_at")
@@ -64,7 +60,12 @@ public class AuthSessionEntity {
                 createdAt,
                 lastSeenAt,
                 absoluteExpiresAt,
-                revokedAt
-        );
+                revokedAt);
+    }
+
+    public void revoke(Instant now) {
+        AuthSession revoked = this.toDomain().revoke(now);
+
+        this.revokedAt = revoked.getRevokedAt();
     }
 }
