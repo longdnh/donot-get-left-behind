@@ -27,6 +27,7 @@ public final class ClientMessages {
     public static final String REGISTRATION_RATE_LIMITED = "Too many registration attempts. Try again later";
     public static final String INVALID_CREDENTIALS = "Invalid email or password";
     public static final String LOGIN_INPUT_TOO_LONG = "Login input is too long";
+    public static final String INVALID_REFRESH_TOKEN = "Unable to refresh authentication. Please sign in again";
 
     private ClientMessages() {
     }

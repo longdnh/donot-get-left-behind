@@ -62,6 +62,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 ClientMessages.INVALID_CREDENTIALS);
     }
 
+    @ExceptionHandler(InvalidRefreshTokenException.class)
+    public ResponseEntity<ApiError> invalidRefreshToken() {
+        return error(
+                HttpStatus.UNAUTHORIZED,
+                ApiErrorCodes.INVALID_REFRESH_TOKEN,
+                ClientMessages.INVALID_REFRESH_TOKEN);
+    }
+
     @Override
     protected ResponseEntity<Object> createResponseEntity(
             @Nullable Object body, HttpHeaders headers, HttpStatusCode status, WebRequest request) {

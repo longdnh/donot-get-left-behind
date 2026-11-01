@@ -3,9 +3,11 @@ package com.longdnh.donot_get_left_behind.identity.infrastructure.persistence.ad
 import static com.longdnh.donot_get_left_behind.common.Validation.requireUuidV7;
 
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.longdnh.donot_get_left_behind.identity.application.port.RefreshTokenRepository;
@@ -49,5 +51,32 @@ public class RefreshTokenRepositoryAdapter implements RefreshTokenRepository {
         entityManager.flush();
 
         entity.consume(replacementTokenId, now);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<UUID> findSessionIdByTokenHash(String tokenHash) {
+        return entityManager.createQuery("""
+                select r.sessionId
+                from RefreshTokenEntity r
+                where r.tokenHash = :tokenHash
+                """, UUID.class)
+                .setParameter("tokenHash", tokenHash)
+                .getResultStream()
+                .findFirst();
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public Optional<RefreshToken> findByTokenHash(String tokenHash) {
+        return entityManager.createQuery("""
+                select r
+                from RefreshTokenEntity r
+                where r.tokenHash = :tokenHash
+                """, RefreshTokenEntity.class)
+                .setParameter("tokenHash", tokenHash)
+                .getResultStream()
+                .findFirst()
+                .map(RefreshTokenEntity::toDomain);
     }
 }

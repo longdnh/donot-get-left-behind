@@ -16,6 +16,7 @@ import com.longdnh.donot_get_left_behind.identity.domain.AuthSession;
 import com.longdnh.donot_get_left_behind.identity.infrastructure.persistence.AuthSessionEntity;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 
 @Repository
 @Transactional(readOnly = true)
@@ -94,5 +95,19 @@ public class AuthSessionRepositoryAdapter implements AuthSessionRepository {
         }
 
         entity.revoke(now);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public Optional<AuthSession> findByIdForUpdate(UUID id) {
+        UUID sessionId = requireUuidV7(id, "id");
+
+        AuthSessionEntity entity = entityManager.find(
+                AuthSessionEntity.class,
+                sessionId,
+                LockModeType.PESSIMISTIC_WRITE);
+
+        return Optional.ofNullable(entity)
+                .map(AuthSessionEntity::toDomain);
     }
 }

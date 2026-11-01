@@ -20,4 +20,6 @@ public interface AuthSessionRepository {
             Duration idleTimeout);
 
     void revoke(UUID sessionId, Instant now);
+
+    Optional<AuthSession> findByIdForUpdate(UUID id);
 }
