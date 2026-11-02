@@ -1,4 +1,4 @@
-package com.longdnh.donot_get_left_behind.identity.infrastructure.persistence;
+package com.longdnh.donot_get_left_behind.identity.infrastructure.persistence.entities;
 
 import java.time.Instant;
 import java.util.Objects;

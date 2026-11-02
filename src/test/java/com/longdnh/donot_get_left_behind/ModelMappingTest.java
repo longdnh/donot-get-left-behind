@@ -10,7 +10,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
 import com.longdnh.donot_get_left_behind.identity.domain.User;
-import com.longdnh.donot_get_left_behind.identity.infrastructure.persistence.UserEntity;
+import com.longdnh.donot_get_left_behind.identity.infrastructure.persistence.entities.UserEntity;
 import com.longdnh.donot_get_left_behind.tenancy.domain.Membership;
 import com.longdnh.donot_get_left_behind.tenancy.domain.Organization;
 import com.longdnh.donot_get_left_behind.tenancy.domain.Role;

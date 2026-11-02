@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.longdnh.donot_get_left_behind.identity.application.port.AuthSessionRepository;
 import com.longdnh.donot_get_left_behind.identity.domain.AuthSession;
-import com.longdnh.donot_get_left_behind.identity.infrastructure.persistence.AuthSessionEntity;
+import com.longdnh.donot_get_left_behind.identity.infrastructure.persistence.entities.AuthSessionEntity;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;

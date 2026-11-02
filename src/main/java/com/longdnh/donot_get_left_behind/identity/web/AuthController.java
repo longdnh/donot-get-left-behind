@@ -28,6 +28,7 @@ import com.longdnh.donot_get_left_behind.identity.application.LoginResult;
 import com.longdnh.donot_get_left_behind.identity.application.LoginService;
 import com.longdnh.donot_get_left_behind.identity.application.RegisterService;
 import com.longdnh.donot_get_left_behind.identity.application.port.UserRepository;
+import com.longdnh.donot_get_left_behind.identity.web.dto.CsrfResponse;
 import com.longdnh.donot_get_left_behind.identity.web.dto.CurrentUserResponse;
 import com.longdnh.donot_get_left_behind.identity.web.dto.LoginRequest;
 import com.longdnh.donot_get_left_behind.identity.web.dto.LoginResponse;

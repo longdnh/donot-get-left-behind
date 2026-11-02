@@ -12,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.longdnh.donot_get_left_behind.identity.application.port.RefreshTokenRepository;
 import com.longdnh.donot_get_left_behind.identity.domain.RefreshToken;
-import com.longdnh.donot_get_left_behind.identity.infrastructure.persistence.RefreshTokenEntity;
+import com.longdnh.donot_get_left_behind.identity.infrastructure.persistence.entities.RefreshTokenEntity;
 
 import jakarta.persistence.EntityManager;
 

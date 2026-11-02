@@ -13,8 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.longdnh.donot_get_left_behind.identity.application.exception.EmailAlreadyExistsException;
 import com.longdnh.donot_get_left_behind.identity.application.port.UserRepository;
 import com.longdnh.donot_get_left_behind.identity.domain.User;
-import com.longdnh.donot_get_left_behind.identity.infrastructure.persistence.SpringDataUserRepository;
-import com.longdnh.donot_get_left_behind.identity.infrastructure.persistence.UserEntity;
+import com.longdnh.donot_get_left_behind.identity.infrastructure.persistence.entities.UserEntity;
+import com.longdnh.donot_get_left_behind.identity.infrastructure.persistence.repository.SpringDataUserRepository;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceException;
