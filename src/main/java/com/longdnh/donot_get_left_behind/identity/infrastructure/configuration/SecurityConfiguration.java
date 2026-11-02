@@ -36,13 +36,6 @@ public class SecurityConfiguration {
       long windowSeconds, JwtDecoder jwtDecoder,
       SessionJwtAuthenticationConverter sessionJwtAuthenticationConverter)
       throws Exception {
-    // CookieCsrfTokenRepository csrfTokens = new CookieCsrfTokenRepository();
-    // csrfTokens.setHeaderName("X-CSRF-TOKEN");
-    // csrfTokens.setCookieCustomizer(cookie
-    //                                -> cookie.httpOnly(true)
-    //                                       .secure(secureCookie)
-    //                                       .sameSite("Lax")
-    //                                       .path("/"));
 
     return http.csrf(csrf -> csrf.csrfTokenRepository(csrfTokenRepository))
         .sessionManagement(
