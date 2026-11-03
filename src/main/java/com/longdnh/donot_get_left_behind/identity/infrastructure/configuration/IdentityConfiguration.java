@@ -20,6 +20,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.longdnh.donot_get_left_behind.identity.application.LoginService;
+import com.longdnh.donot_get_left_behind.identity.application.RefreshService;
 import com.longdnh.donot_get_left_behind.identity.application.RegistrationPolicy;
 import com.longdnh.donot_get_left_behind.identity.application.port.AccessTokenIssuer;
 import com.longdnh.donot_get_left_behind.identity.application.port.AuthSessionRepository;
@@ -34,6 +35,12 @@ import jakarta.validation.Validator;
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(AuthProperties.class)
 public class IdentityConfiguration {
+
+    private final AuthProperties authProperties;
+
+    IdentityConfiguration(AuthProperties authProperties) {
+        this.authProperties = authProperties;
+    }
 
     @Bean
     public Clock clock() {
@@ -88,6 +95,31 @@ public class IdentityConfiguration {
                 properties.absoluteLifetime(),
                 dummyPasswordHash,
                 new TransactionTemplate(transactionManager));
+    }
+
+    @Bean 
+    public RefreshService refreshService(
+        UserRepository userRepository,
+        AuthSessionRepository authSessionRepository,
+        RefreshTokenRepository refreshTokenRepository,
+        RefreshTokenGenerator refreshTokenGenerator,
+        AccessTokenIssuer accessTokenIssuer,
+        IdGenerator idGenerator,
+        Clock clock,
+        PlatformTransactionManager transactionManager
+    ){
+        return new RefreshService(
+            userRepository, 
+            authSessionRepository, 
+            refreshTokenRepository, 
+            refreshTokenGenerator, 
+            accessTokenIssuer, 
+            idGenerator, 
+            clock, 
+            authProperties.accessTokenLifetime(), 
+            authProperties.idleTimeout(), 
+            new TransactionTemplate(transactionManager)
+        );
     }
 
 }

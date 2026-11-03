@@ -17,15 +17,18 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.longdnh.donot_get_left_behind.common.Exception.InvalidRefreshTokenException;
 import com.longdnh.donot_get_left_behind.common.constants.ClientMessages;
 import com.longdnh.donot_get_left_behind.identity.application.LoginResult;
 import com.longdnh.donot_get_left_behind.identity.application.LoginService;
+import com.longdnh.donot_get_left_behind.identity.application.RefreshService;
 import com.longdnh.donot_get_left_behind.identity.application.RegisterService;
 import com.longdnh.donot_get_left_behind.identity.application.port.UserRepository;
 import com.longdnh.donot_get_left_behind.identity.web.dto.CsrfResponse;
@@ -38,146 +41,160 @@ import com.longdnh.donot_get_left_behind.identity.web.dto.RegisterResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
-@RequestMapping(
-    path = "/api/auth",
-    produces = MediaType.APPLICATION_JSON_VALUE
-)
+@RequestMapping(path = "/api/auth", produces = MediaType.APPLICATION_JSON_VALUE)
 public class AuthController {
 
-    private static final String REFRESH_COOKIE_NAME = "refresh_token";
-    private static final String REFRESH_COOKIE_PATH = "/api/auth";
+        private static final String REFRESH_COOKIE_NAME = "refresh_token";
+        private static final String REFRESH_COOKIE_PATH = "/api/auth";
 
-    private final RegisterService registerService;
-    private final LoginService loginService;
-    private final UserRepository userRepository;
-    private final CsrfTokenRepository csrfTokenRepository;
-    private final Clock clock;
-    private final boolean secureRefreshCookie;
+        private final RegisterService registerService;
+        private final LoginService loginService;
+        private final UserRepository userRepository;
+        private final CsrfTokenRepository csrfTokenRepository;
+        private final Clock clock;
+        private final boolean secureRefreshCookie;
+        private final RefreshService refreshService;
 
-    public AuthController(
-            RegisterService registerService,
-            LoginService loginService,
-            UserRepository userRepository,
-            CsrfTokenRepository csrfTokenRepository,
-            Clock clock,
-            @Value("${app.security.refresh.secure-cookie:true}")
-            boolean secureRefreshCookie) {
+        public AuthController(
+                        RegisterService registerService,
+                        LoginService loginService,
+                        UserRepository userRepository,
+                        CsrfTokenRepository csrfTokenRepository,
+                        Clock clock,
+                        @Value("${app.security.refresh.secure-cookie:true}") boolean secureRefreshCookie,
+                        RefreshService refreshService) {
 
-        this.registerService = registerService;
-        this.loginService = loginService;
-        this.userRepository = userRepository;
-        this.csrfTokenRepository = csrfTokenRepository;
-        this.clock = clock;
-        this.secureRefreshCookie = secureRefreshCookie;
-    }
+                this.registerService = registerService;
+                this.loginService = loginService;
+                this.userRepository = userRepository;
+                this.csrfTokenRepository = csrfTokenRepository;
+                this.clock = clock;
+                this.secureRefreshCookie = secureRefreshCookie;
+                this.refreshService = refreshService;
+        }
 
-    @GetMapping("/csrf")
-    public ResponseEntity<CsrfResponse> csrf(CsrfToken token) {
-        return ResponseEntity.ok()
-                .cacheControl(CacheControl.noStore())
-                .body(new CsrfResponse(
-                        token.getHeaderName(),
-                        token.getToken()
-                ));
-    }
+        @GetMapping("/csrf")
+        public ResponseEntity<CsrfResponse> csrf(CsrfToken token) {
+                return ResponseEntity.ok()
+                                .cacheControl(CacheControl.noStore())
+                                .body(new CsrfResponse(
+                                                token.getHeaderName(),
+                                                token.getToken()));
+        }
 
-    @PostMapping(
-        path = "/register",
-        consumes = MediaType.APPLICATION_JSON_VALUE
-    )
-    public ResponseEntity<RegisterResponse> register(
-            @Valid @RequestBody RegisterRequest request) {
+        @PostMapping(path = "/register", consumes = MediaType.APPLICATION_JSON_VALUE)
+        public ResponseEntity<RegisterResponse> register(
+                        @Valid @RequestBody RegisterRequest request) {
 
-        UUID userId = registerService.register(
-                request.email(),
-                request.password()
-        );
+                UUID userId = registerService.register(
+                                request.email(),
+                                request.password());
 
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .cacheControl(CacheControl.noStore())
-                .body(new RegisterResponse(userId));
-    }
+                return ResponseEntity.status(HttpStatus.CREATED)
+                                .cacheControl(CacheControl.noStore())
+                                .body(new RegisterResponse(userId));
+        }
 
-    @PostMapping(
-        path = "/login",
-        consumes = MediaType.APPLICATION_JSON_VALUE
-    )
-    public ResponseEntity<LoginResponse> login(
-            @Valid @RequestBody LoginRequest request,
-            HttpServletRequest servletRequest,
-            HttpServletResponse servletResponse) {
+        @PostMapping(path = "/login", consumes = MediaType.APPLICATION_JSON_VALUE)
+        public ResponseEntity<LoginResponse> login(
+                        @Valid @RequestBody LoginRequest request,
+                        HttpServletRequest servletRequest,
+                        HttpServletResponse servletResponse) {
 
-        LoginResult result = loginService.login(
-                request.email(),
-                request.password()
-        );
+                LoginResult result = loginService.login(
+                                request.email(),
+                                request.password());
 
-        Instant now = clock.instant();
+                Instant now = clock.instant();
 
-        long refreshMaxAge = Math.max(
-                0,
-                Duration.between(
-                        now,
-                        result.refreshTokenExpiresAt()
-                ).getSeconds()
-        );
+                ResponseCookie cookie = buildRefreshCookie(result.refreshToken(), result.refreshTokenExpiresAt(), now);
 
-        ResponseCookie refreshCookie = ResponseCookie
-                .from(REFRESH_COOKIE_NAME, result.refreshToken())
-                .httpOnly(true)
-                .secure(secureRefreshCookie)
-                .sameSite("Lax")
-                .path(REFRESH_COOKIE_PATH)
-                .maxAge(refreshMaxAge)
-                .build();
+                servletResponse.addHeader(
+                                HttpHeaders.SET_COOKIE,
+                                cookie.toString());
 
-        servletResponse.addHeader(
-                HttpHeaders.SET_COOKIE,
-                refreshCookie.toString()
-        );
+                csrfTokenRepository.saveToken(
+                                null,
+                                servletRequest,
+                                servletResponse);
 
-        csrfTokenRepository.saveToken(
-                null,
-                servletRequest,
-                servletResponse
-        );
+                long expiresIn = Math.max(
+                                0,
+                                Duration.between(
+                                                now,
+                                                result.accessTokenExpiresAt()).getSeconds());
 
-        long expiresIn = Math.max(
-                0,
-                Duration.between(
-                        now,
-                        result.accessTokenExpiresAt()
-                ).getSeconds()
-        );
+                return ResponseEntity.ok()
+                                .cacheControl(CacheControl.noStore())
+                                .body(new LoginResponse(
+                                                result.accessToken(),
+                                                "Bearer",
+                                                expiresIn));
+        }
 
-        return ResponseEntity.ok()
-                .cacheControl(CacheControl.noStore())
-                .body(new LoginResponse(
-                        result.accessToken(),
-                        "Bearer",
-                        expiresIn
-                ));
-    }
+        @GetMapping("/me")
+        public ResponseEntity<CurrentUserResponse> me(
+                        @AuthenticationPrincipal Jwt jwt) {
 
-    @GetMapping("/me")
-    public ResponseEntity<CurrentUserResponse> me(
-            @AuthenticationPrincipal Jwt jwt) {
+                UUID userId = UUID.fromString(jwt.getSubject());
 
-        UUID userId = UUID.fromString(jwt.getSubject());
+                var user = userRepository.findById(userId)
+                                .filter(candidate -> candidate.isActive())
+                                .orElseThrow(() -> new BadCredentialsException(
+                                                ClientMessages.AUTHENTICATION_REQUIRED));
 
-        var user = userRepository.findById(userId)
-                .filter(candidate -> candidate.isActive())
-                .orElseThrow(() -> new BadCredentialsException(
-                        ClientMessages.AUTHENTICATION_REQUIRED
-                ));
+                return ResponseEntity.ok()
+                                .cacheControl(CacheControl.noStore())
+                                .body(new CurrentUserResponse(
+                                                user.getId(),
+                                                user.getEmail()));
+        }
 
-        return ResponseEntity.ok()
-                .cacheControl(CacheControl.noStore())
-                .body(new CurrentUserResponse(
-                        user.getId(),
-                        user.getEmail()
-                ));
-    }
+        @PostMapping("/refresh")
+        public ResponseEntity<LoginResponse> getRefreshToken(
+                        HttpServletResponse response,
+                        @CookieValue(name = REFRESH_COOKIE_NAME) String rawRefreshToken) {
+
+                if (rawRefreshToken == null) {
+                        throw new InvalidRefreshTokenException();
+                }
+                var result = refreshService.refresh(rawRefreshToken);
+                Instant now = clock.instant();
+
+                ResponseCookie cookie = buildRefreshCookie(result.refreshToken(), result.refreshTokenExpiresAt(), now);
+                response.addHeader(
+                                HttpHeaders.SET_COOKIE,
+                                cookie.toString());
+
+                long expiresIn = Math.max(
+                                0,
+                                Duration.between(
+                                                now,
+                                                result.accessTokenExpiresAt()).getSeconds());
+                return ResponseEntity.ok()
+                                .cacheControl(CacheControl.noStore())
+                                .body(new LoginResponse(
+                                                result.accessToken(),
+                                                "Bearer",
+                                                expiresIn));
+        }
+
+        private ResponseCookie buildRefreshCookie(String rawToken, Instant expiresAt, Instant now) {
+                long refreshMaxAge = Math.max(
+                                0,
+                                Duration.between(now, expiresAt).getSeconds());
+
+                return ResponseCookie
+                                .from(REFRESH_COOKIE_NAME, rawToken)
+                                .httpOnly(true)
+                                .secure(secureRefreshCookie)
+                                .sameSite("Lax")
+                                .path(REFRESH_COOKIE_PATH)
+                                .maxAge(refreshMaxAge)
+                                .build();
+
+        }
 }
