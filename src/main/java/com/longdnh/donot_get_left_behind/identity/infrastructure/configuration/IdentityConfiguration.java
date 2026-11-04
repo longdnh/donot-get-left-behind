@@ -20,6 +20,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.longdnh.donot_get_left_behind.identity.application.LoginService;
+import com.longdnh.donot_get_left_behind.identity.application.LogoutService;
 import com.longdnh.donot_get_left_behind.identity.application.RefreshService;
 import com.longdnh.donot_get_left_behind.identity.application.RegistrationPolicy;
 import com.longdnh.donot_get_left_behind.identity.application.port.AccessTokenIssuer;
@@ -97,29 +98,37 @@ public class IdentityConfiguration {
                 new TransactionTemplate(transactionManager));
     }
 
-    @Bean 
+    @Bean
     public RefreshService refreshService(
-        UserRepository userRepository,
-        AuthSessionRepository authSessionRepository,
-        RefreshTokenRepository refreshTokenRepository,
-        RefreshTokenGenerator refreshTokenGenerator,
-        AccessTokenIssuer accessTokenIssuer,
-        IdGenerator idGenerator,
-        Clock clock,
-        PlatformTransactionManager transactionManager
-    ){
+            UserRepository userRepository,
+            AuthSessionRepository authSessionRepository,
+            RefreshTokenRepository refreshTokenRepository,
+            RefreshTokenGenerator refreshTokenGenerator,
+            AccessTokenIssuer accessTokenIssuer,
+            IdGenerator idGenerator,
+            Clock clock,
+            PlatformTransactionManager transactionManager) {
         return new RefreshService(
-            userRepository, 
-            authSessionRepository, 
-            refreshTokenRepository, 
-            refreshTokenGenerator, 
-            accessTokenIssuer, 
-            idGenerator, 
-            clock, 
-            authProperties.accessTokenLifetime(), 
-            authProperties.idleTimeout(), 
-            new TransactionTemplate(transactionManager)
-        );
+                userRepository,
+                authSessionRepository,
+                refreshTokenRepository,
+                refreshTokenGenerator,
+                accessTokenIssuer,
+                idGenerator,
+                clock,
+                authProperties.accessTokenLifetime(),
+                authProperties.idleTimeout(),
+                new TransactionTemplate(transactionManager));
     }
 
+    @Bean
+    public LogoutService logoutService(
+            RefreshTokenRepository refreshTokenRepository,
+            AuthSessionRepository authSessionRepository,
+            RefreshTokenGenerator refreshTokenGenerator,
+            PlatformTransactionManager transactionManager,
+            Clock clock) {
+        return new LogoutService(refreshTokenRepository, authSessionRepository, refreshTokenGenerator,
+                new TransactionTemplate(transactionManager), clock);
+    }
 }

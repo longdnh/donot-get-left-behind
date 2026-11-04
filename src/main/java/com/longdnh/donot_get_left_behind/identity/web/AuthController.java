@@ -1,5 +1,6 @@
 package com.longdnh.donot_get_left_behind.identity.web;
 
+import com.longdnh.donot_get_left_behind.identity.application.LogoutService;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -48,7 +49,7 @@ public class AuthController {
 
         private static final String REFRESH_COOKIE_NAME = "refresh_token";
         private static final String REFRESH_COOKIE_PATH = "/api/auth";
-
+        
         private final RegisterService registerService;
         private final LoginService loginService;
         private final UserRepository userRepository;
@@ -56,7 +57,8 @@ public class AuthController {
         private final Clock clock;
         private final boolean secureRefreshCookie;
         private final RefreshService refreshService;
-
+        private final LogoutService logoutService;
+        
         public AuthController(
                         RegisterService registerService,
                         LoginService loginService,
@@ -64,7 +66,8 @@ public class AuthController {
                         CsrfTokenRepository csrfTokenRepository,
                         Clock clock,
                         @Value("${app.security.refresh.secure-cookie:true}") boolean secureRefreshCookie,
-                        RefreshService refreshService) {
+                        RefreshService refreshService, 
+                        LogoutService logoutService) {
 
                 this.registerService = registerService;
                 this.loginService = loginService;
@@ -73,6 +76,7 @@ public class AuthController {
                 this.clock = clock;
                 this.secureRefreshCookie = secureRefreshCookie;
                 this.refreshService = refreshService;
+                this.logoutService = logoutService;
         }
 
         @GetMapping("/csrf")
@@ -181,6 +185,20 @@ public class AuthController {
                                                 expiresIn));
         }
 
+        @PostMapping("/logout")
+        public ResponseEntity<Void> logout(
+                        @CookieValue(name = REFRESH_COOKIE_NAME, required = false) String rawRefreshToken,
+                        HttpServletRequest servletRequest,
+                        HttpServletResponse servletResponse) {
+
+                logoutService.logout(rawRefreshToken);
+
+                servletResponse.addHeader(HttpHeaders.SET_COOKIE, expiredRefreshCookie().toString());
+                csrfTokenRepository.saveToken(null, servletRequest, servletResponse);
+
+                return ResponseEntity.noContent().cacheControl(CacheControl.noStore()).build();
+        }
+
         private ResponseCookie buildRefreshCookie(String rawToken, Instant expiresAt, Instant now) {
                 long refreshMaxAge = Math.max(
                                 0,
@@ -195,5 +213,15 @@ public class AuthController {
                                 .maxAge(refreshMaxAge)
                                 .build();
 
+        }
+
+        private ResponseCookie expiredRefreshCookie() {
+                return ResponseCookie.from(REFRESH_COOKIE_NAME, "")
+                                .httpOnly(true)
+                                .secure(secureRefreshCookie)
+                                .sameSite("Lax")
+                                .path(REFRESH_COOKIE_PATH)
+                                .maxAge(0)
+                                .build();
         }
 }
