@@ -1,4 +1,4 @@
-package com.longdnh.donot_get_left_behind.identity.application;
+package com.longdnh.donot_get_left_behind.identity.application.service;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
+import com.longdnh.donot_get_left_behind.identity.application.RegistrationPolicy;
 import com.longdnh.donot_get_left_behind.identity.application.exception.EmailAlreadyExistsException;
 import com.longdnh.donot_get_left_behind.identity.application.port.IdGenerator;
 import com.longdnh.donot_get_left_behind.identity.application.port.PasswordHasher;

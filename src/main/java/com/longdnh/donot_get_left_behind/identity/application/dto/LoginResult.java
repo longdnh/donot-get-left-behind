@@ -1,8 +1,8 @@
-package com.longdnh.donot_get_left_behind.identity.application;
+package com.longdnh.donot_get_left_behind.identity.application.dto;
 
 import java.time.Instant;
 
-public record RefreshResult(
+public record LoginResult(
         String accessToken,
         Instant accessTokenExpiresAt,
         String refreshToken,
@@ -10,6 +10,6 @@ public record RefreshResult(
 
     @Override
     public String toString() {
-        return "RefreshResult{tokens=[REDACTED]}";
+        return "LoginResult{tokens=[REDACTED]}";
     }
 }

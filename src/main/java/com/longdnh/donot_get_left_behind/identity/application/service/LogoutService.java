@@ -1,4 +1,4 @@
-package com.longdnh.donot_get_left_behind.identity.application;
+package com.longdnh.donot_get_left_behind.identity.application.service;
 
 import java.time.Clock;
 import java.time.Instant;

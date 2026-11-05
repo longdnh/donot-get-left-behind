@@ -1,6 +1,5 @@
 package com.longdnh.donot_get_left_behind.identity.web;
 
-import com.longdnh.donot_get_left_behind.identity.application.LogoutService;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -27,11 +26,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.longdnh.donot_get_left_behind.common.Exception.InvalidRefreshTokenException;
 import com.longdnh.donot_get_left_behind.common.constants.ClientMessages;
-import com.longdnh.donot_get_left_behind.identity.application.LoginResult;
-import com.longdnh.donot_get_left_behind.identity.application.LoginService;
-import com.longdnh.donot_get_left_behind.identity.application.RefreshService;
-import com.longdnh.donot_get_left_behind.identity.application.RegisterService;
+import com.longdnh.donot_get_left_behind.identity.application.dto.LoginResult;
 import com.longdnh.donot_get_left_behind.identity.application.port.UserRepository;
+import com.longdnh.donot_get_left_behind.identity.application.service.LoginService;
+import com.longdnh.donot_get_left_behind.identity.application.service.LogoutService;
+import com.longdnh.donot_get_left_behind.identity.application.service.RefreshService;
+import com.longdnh.donot_get_left_behind.identity.application.service.RegisterService;
 import com.longdnh.donot_get_left_behind.identity.web.dto.CsrfResponse;
 import com.longdnh.donot_get_left_behind.identity.web.dto.CurrentUserResponse;
 import com.longdnh.donot_get_left_behind.identity.web.dto.LoginRequest;

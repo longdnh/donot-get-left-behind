@@ -14,8 +14,8 @@ import com.longdnh.donot_get_left_behind.identity.infrastructure.persistence.ent
 import com.longdnh.donot_get_left_behind.tenancy.domain.Membership;
 import com.longdnh.donot_get_left_behind.tenancy.domain.Organization;
 import com.longdnh.donot_get_left_behind.tenancy.domain.Role;
-import com.longdnh.donot_get_left_behind.tenancy.infrastructure.persistence.MembershipEntity;
-import com.longdnh.donot_get_left_behind.tenancy.infrastructure.persistence.OrganizationEntity;
+import com.longdnh.donot_get_left_behind.tenancy.infrastructure.persistence.entities.MembershipEntity;
+import com.longdnh.donot_get_left_behind.tenancy.infrastructure.persistence.entities.OrganizationEntity;
 
 class ModelMappingTest {
 

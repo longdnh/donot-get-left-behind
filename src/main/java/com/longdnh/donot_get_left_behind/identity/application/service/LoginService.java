@@ -1,4 +1,4 @@
-package com.longdnh.donot_get_left_behind.identity.application;
+package com.longdnh.donot_get_left_behind.identity.application.service;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -10,6 +10,7 @@ import java.util.Objects;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.longdnh.donot_get_left_behind.common.Exception.InvalidCredentialsException;
+import com.longdnh.donot_get_left_behind.identity.application.dto.LoginResult;
 import com.longdnh.donot_get_left_behind.identity.application.port.AccessTokenIssuer;
 import com.longdnh.donot_get_left_behind.identity.application.port.AuthSessionRepository;
 import com.longdnh.donot_get_left_behind.identity.application.port.IdGenerator;

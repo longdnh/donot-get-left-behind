@@ -19,9 +19,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import com.longdnh.donot_get_left_behind.identity.application.LoginService;
-import com.longdnh.donot_get_left_behind.identity.application.LogoutService;
-import com.longdnh.donot_get_left_behind.identity.application.RefreshService;
 import com.longdnh.donot_get_left_behind.identity.application.RegistrationPolicy;
 import com.longdnh.donot_get_left_behind.identity.application.port.AccessTokenIssuer;
 import com.longdnh.donot_get_left_behind.identity.application.port.AuthSessionRepository;
@@ -30,6 +27,9 @@ import com.longdnh.donot_get_left_behind.identity.application.port.PasswordHashe
 import com.longdnh.donot_get_left_behind.identity.application.port.RefreshTokenGenerator;
 import com.longdnh.donot_get_left_behind.identity.application.port.RefreshTokenRepository;
 import com.longdnh.donot_get_left_behind.identity.application.port.UserRepository;
+import com.longdnh.donot_get_left_behind.identity.application.service.LoginService;
+import com.longdnh.donot_get_left_behind.identity.application.service.LogoutService;
+import com.longdnh.donot_get_left_behind.identity.application.service.RefreshService;
 
 import jakarta.validation.Validator;
 
