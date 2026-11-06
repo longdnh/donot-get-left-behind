@@ -1,0 +1,47 @@
+package com.longdnh.donot_get_left_behind.tenancy.application.service;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.longdnh.donot_get_left_behind.identity.application.port.IdGenerator;
+import com.longdnh.donot_get_left_behind.tenancy.application.dto.CreateOrganizationResult;
+import com.longdnh.donot_get_left_behind.tenancy.application.port.MembershipRepository;
+import com.longdnh.donot_get_left_behind.tenancy.application.port.OrganizationRepository;
+import com.longdnh.donot_get_left_behind.tenancy.domain.Membership;
+import com.longdnh.donot_get_left_behind.tenancy.domain.Organization;
+import com.longdnh.donot_get_left_behind.tenancy.domain.Role;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class OrganizationService {
+
+    private final OrganizationRepository organizationRepository;
+    private final MembershipRepository membershipRepository;
+    private final IdGenerator idGenerator;
+    private final Clock clock;
+
+    /** The organization and its first owner membership are committed together or not at all. */
+    @Transactional
+    public CreateOrganizationResult create(UUID ownerUserId, String name) {
+        Instant now = clock.instant();
+
+        Organization organization = Organization.create(idGenerator.generate(), name, now);
+        Membership ownerMembership = Membership.create(
+                idGenerator.generate(),
+                organization.getId(),
+                ownerUserId,
+                Role.OWNER,
+                now);
+
+        // The membership references the organization, so the organization is inserted first.
+        return new CreateOrganizationResult(
+                organizationRepository.create(organization),
+                membershipRepository.create(ownerMembership));
+    }
+}
