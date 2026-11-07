@@ -3,6 +3,9 @@ package com.longdnh.donot_get_left_behind.tenancy.application.port;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.longdnh.donot_get_left_behind.common.pagination.PageRequest;
+import com.longdnh.donot_get_left_behind.common.pagination.PageResult;
+import com.longdnh.donot_get_left_behind.tenancy.application.dto.OrganizationSummary;
 import com.longdnh.donot_get_left_behind.tenancy.domain.Organization;
 
 public interface OrganizationRepository {
@@ -12,4 +15,10 @@ public interface OrganizationRepository {
 
     /** Must be called inside the caller's transaction. */
     Optional<Organization> findById(UUID organizationId);
+
+    /**
+     * Organizations in which the user holds an ACTIVE membership, ordered by organization id
+     * (UUIDv7, so creation order and a total order). Must be called inside the caller's transaction.
+     */
+    PageResult<OrganizationSummary> findActiveByMemberUserId(UUID userId, PageRequest page);
 }

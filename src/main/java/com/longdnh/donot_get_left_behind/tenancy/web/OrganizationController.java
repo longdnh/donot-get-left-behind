@@ -13,16 +13,22 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.longdnh.donot_get_left_behind.common.pagination.PageRequest;
 import com.longdnh.donot_get_left_behind.tenancy.application.dto.CreateOrganizationResult;
 import com.longdnh.donot_get_left_behind.tenancy.application.service.OrganizationService;
 import com.longdnh.donot_get_left_behind.tenancy.web.dto.CreateOrganizationRequest;
 import com.longdnh.donot_get_left_behind.tenancy.web.dto.CreateOrganizationResponse;
 import com.longdnh.donot_get_left_behind.tenancy.web.dto.MembershipResponse;
 import com.longdnh.donot_get_left_behind.tenancy.web.dto.OrganizationResponse;
+import com.longdnh.donot_get_left_behind.tenancy.web.dto.OrganizationSummaryResponse;
+import com.longdnh.donot_get_left_behind.tenancy.web.dto.PageResponse;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -60,5 +66,21 @@ public class OrganizationController {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
                 .body(OrganizationResponse.from(organizationService.getProfile(organizationId, callerUserId)));
+    }
+
+    /** Constraint violations on the params are turned into 400 by Spring's built-in method validation. */
+    @GetMapping
+    public ResponseEntity<PageResponse<OrganizationSummaryResponse>> list(
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "" + PageRequest.DEFAULT_SIZE) @Min(1) @Max(PageRequest.MAX_SIZE) int size,
+            @AuthenticationPrincipal Jwt jwt) {
+
+        UUID callerUserId = UUID.fromString(jwt.getSubject());
+
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(PageResponse.from(
+                        organizationService.listForUser(callerUserId, new PageRequest(page, size)),
+                        OrganizationSummaryResponse::from));
     }
 }

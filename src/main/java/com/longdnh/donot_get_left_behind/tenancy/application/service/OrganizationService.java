@@ -8,7 +8,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.longdnh.donot_get_left_behind.common.id.IdGenerator;
+import com.longdnh.donot_get_left_behind.common.pagination.PageRequest;
+import com.longdnh.donot_get_left_behind.common.pagination.PageResult;
 import com.longdnh.donot_get_left_behind.tenancy.application.dto.CreateOrganizationResult;
+import com.longdnh.donot_get_left_behind.tenancy.application.dto.OrganizationSummary;
 import com.longdnh.donot_get_left_behind.tenancy.application.exception.OrganizationNotFoundException;
 import com.longdnh.donot_get_left_behind.tenancy.application.port.MembershipRepository;
 import com.longdnh.donot_get_left_behind.tenancy.application.port.OrganizationRepository;
@@ -54,5 +57,11 @@ public class OrganizationService {
         // The FK guarantees the organization exists once a membership does; the orElseThrow is defensive.
         return organizationRepository.findById(organizationId)
                 .orElseThrow(OrganizationNotFoundException::new);
+    }
+
+    /** No access check needed: the query is already scoped to the caller's own memberships. */
+    @Transactional(readOnly = true)
+    public PageResult<OrganizationSummary> listForUser(UUID callerUserId, PageRequest page) {
+        return organizationRepository.findActiveByMemberUserId(callerUserId, page);
     }
 }
