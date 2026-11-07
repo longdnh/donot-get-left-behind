@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,6 +26,7 @@ import com.longdnh.donot_get_left_behind.tenancy.web.dto.MembershipResponse;
 import com.longdnh.donot_get_left_behind.tenancy.web.dto.OrganizationResponse;
 import com.longdnh.donot_get_left_behind.tenancy.web.dto.OrganizationSummaryResponse;
 import com.longdnh.donot_get_left_behind.tenancy.web.dto.PageResponse;
+import com.longdnh.donot_get_left_behind.tenancy.web.dto.UpdateOrganizationRequest;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -82,5 +84,19 @@ public class OrganizationController {
                 .body(PageResponse.from(
                         organizationService.listForUser(callerUserId, new PageRequest(page, size)),
                         OrganizationSummaryResponse::from));
+    }
+
+    @PatchMapping(path = "/{organizationId}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<OrganizationResponse> rename(
+            @PathVariable UUID organizationId,
+            @Valid @RequestBody UpdateOrganizationRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+
+        UUID callerUserId = UUID.fromString(jwt.getSubject());
+
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(OrganizationResponse.from(
+                        organizationService.rename(organizationId, callerUserId, request.name())));
     }
 }

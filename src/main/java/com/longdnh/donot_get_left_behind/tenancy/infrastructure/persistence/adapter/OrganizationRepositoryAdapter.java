@@ -38,6 +38,14 @@ public class OrganizationRepositoryAdapter implements OrganizationRepository {
     }
 
     @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public Organization update(Organization organization) {
+        // The domain object is immutable, so the entity is rebuilt and merged onto the managed row.
+        // created_at is updatable=false on the entity, so only name and updated_at reach the UPDATE.
+        return entityManager.merge(OrganizationEntity.fromDomain(organization)).toDomain();
+    }
+
+    @Override
     @Transactional(propagation = Propagation.MANDATORY, readOnly = true)
     public Optional<Organization> findById(UUID organizationId) {
         return Optional.ofNullable(entityManager.find(OrganizationEntity.class, organizationId))

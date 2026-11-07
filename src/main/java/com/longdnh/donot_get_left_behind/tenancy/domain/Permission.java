@@ -1,0 +1,14 @@
+package com.longdnh.donot_get_left_behind.tenancy.domain;
+
+/** One row of the action table in docs/authentication-authorization.md §5. */
+public enum Permission {
+    READ_ORGANIZATION,
+    UPDATE_ORGANIZATION,
+    READ_OWN_MEMBERSHIP,
+    LIST_MEMBERSHIPS,
+    ADD_MEMBER,
+    ADD_ADMIN,
+    CHANGE_ROLE,
+    REMOVE_MEMBER,
+    REMOVE_ADMIN_OR_OWNER
+}

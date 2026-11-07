@@ -1,7 +1,33 @@
 package com.longdnh.donot_get_left_behind.tenancy.domain;
 
+import java.util.EnumSet;
+import java.util.Set;
+
+/**
+ * Role inside one organization. The permission sets are the matrix in
+ * docs/authentication-authorization.md §5; they say nothing about target-specific rules
+ * (last owner, admin cannot touch an owner), which application services check separately.
+ */
 public enum Role {
-    OWNER,
-    ADMIN,
-    MEMBER
+    OWNER(EnumSet.allOf(Permission.class)),
+    ADMIN(EnumSet.of(
+            Permission.READ_ORGANIZATION,
+            Permission.UPDATE_ORGANIZATION,
+            Permission.READ_OWN_MEMBERSHIP,
+            Permission.LIST_MEMBERSHIPS,
+            Permission.ADD_MEMBER,
+            Permission.REMOVE_MEMBER)),
+    MEMBER(EnumSet.of(
+            Permission.READ_ORGANIZATION,
+            Permission.READ_OWN_MEMBERSHIP));
+
+    private final Set<Permission> permissions;
+
+    Role(Set<Permission> permissions) {
+        this.permissions = Set.copyOf(permissions);
+    }
+
+    public boolean allows(Permission permission) {
+        return permissions.contains(permission);
+    }
 }

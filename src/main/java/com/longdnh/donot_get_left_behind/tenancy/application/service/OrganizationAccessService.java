@@ -6,9 +6,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.longdnh.donot_get_left_behind.tenancy.application.exception.InsufficientPermissionException;
 import com.longdnh.donot_get_left_behind.tenancy.application.exception.OrganizationNotFoundException;
 import com.longdnh.donot_get_left_behind.tenancy.application.port.MembershipRepository;
 import com.longdnh.donot_get_left_behind.tenancy.domain.Membership;
+import com.longdnh.donot_get_left_behind.tenancy.domain.Permission;
 
 import lombok.RequiredArgsConstructor;
 
@@ -33,5 +35,18 @@ public class OrganizationAccessService {
         return membershipRepository.findByOrganizationIdAndUserId(organizationId, userId)
                 .filter(Membership::isActive)
                 .orElseThrow(OrganizationNotFoundException::new);
+    }
+
+    /**
+     * Membership check first (404 for outsiders), then the role matrix (403 for members
+     * without the permission). The order matters: a 403 would confirm the organization exists.
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public Membership requirePermission(UUID organizationId, UUID userId, Permission permission) {
+        Membership membership = requireActiveMembership(organizationId, userId);
+        if (!membership.getRole().allows(permission)) {
+            throw new InsufficientPermissionException();
+        }
+        return membership;
     }
 }

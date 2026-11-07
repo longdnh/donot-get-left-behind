@@ -16,6 +16,9 @@ public interface OrganizationRepository {
     /** Must be called inside the caller's transaction. */
     Optional<Organization> findById(UUID organizationId);
 
+    /** Writes the new state of an existing organization. Must be called inside the caller's transaction. */
+    Organization update(Organization organization);
+
     /**
      * Organizations in which the user holds an ACTIVE membership, ordered by organization id
      * (UUIDv7, so creation order and a total order). Must be called inside the caller's transaction.

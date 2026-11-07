@@ -17,6 +17,7 @@ import com.longdnh.donot_get_left_behind.tenancy.application.port.MembershipRepo
 import com.longdnh.donot_get_left_behind.tenancy.application.port.OrganizationRepository;
 import com.longdnh.donot_get_left_behind.tenancy.domain.Membership;
 import com.longdnh.donot_get_left_behind.tenancy.domain.Organization;
+import com.longdnh.donot_get_left_behind.tenancy.domain.Permission;
 import com.longdnh.donot_get_left_behind.tenancy.domain.Role;
 
 import lombok.RequiredArgsConstructor;
@@ -53,7 +54,7 @@ public class OrganizationService {
     /** Any active member may read the profile; everyone else gets the same 404. */
     @Transactional(readOnly = true)
     public Organization getProfile(UUID organizationId, UUID callerUserId) {
-        accessService.requireActiveMembership(organizationId, callerUserId);
+        accessService.requirePermission(organizationId, callerUserId, Permission.READ_ORGANIZATION);
         // The FK guarantees the organization exists once a membership does; the orElseThrow is defensive.
         return organizationRepository.findById(organizationId)
                 .orElseThrow(OrganizationNotFoundException::new);
@@ -63,5 +64,18 @@ public class OrganizationService {
     @Transactional(readOnly = true)
     public PageResult<OrganizationSummary> listForUser(UUID callerUserId, PageRequest page) {
         return organizationRepository.findActiveByMemberUserId(callerUserId, page);
+    }
+
+    /**
+     * No organization-row lock here: the only invariant is on the name itself, so a caller
+     * who loses their role while this runs produces the same state as if they had been
+     * a few milliseconds earlier. Membership mutations are the ones that lock.
+     */
+    @Transactional
+    public Organization rename(UUID organizationId, UUID callerUserId, String name) {
+        accessService.requirePermission(organizationId, callerUserId, Permission.UPDATE_ORGANIZATION);
+        Organization organization = organizationRepository.findById(organizationId)
+                .orElseThrow(OrganizationNotFoundException::new);
+        return organizationRepository.update(organization.rename(name, clock.instant()));
     }
 }
