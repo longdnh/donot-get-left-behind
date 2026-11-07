@@ -1,5 +1,8 @@
 package com.longdnh.donot_get_left_behind.tenancy.infrastructure.persistence.adapter;
 
+import java.util.Optional;
+import java.util.UUID;
+
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,5 +28,12 @@ public class OrganizationRepositoryAdapter implements OrganizationRepository {
         OrganizationEntity entity = OrganizationEntity.fromDomain(organization);
         entityManager.persist(entity);
         return entity.toDomain();
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY, readOnly = true)
+    public Optional<Organization> findById(UUID organizationId) {
+        return Optional.ofNullable(entityManager.find(OrganizationEntity.class, organizationId))
+                .map(OrganizationEntity::toDomain);
     }
 }

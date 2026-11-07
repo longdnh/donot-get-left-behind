@@ -1,5 +1,8 @@
 package com.longdnh.donot_get_left_behind.tenancy.infrastructure.persistence.adapter;
 
+import java.util.Optional;
+import java.util.UUID;
+
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,5 +28,19 @@ public class MembershipRepositoryAdapter implements MembershipRepository {
         MembershipEntity entity = MembershipEntity.fromDomain(membership);
         entityManager.persist(entity);
         return entity.toDomain();
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY, readOnly = true)
+    public Optional<Membership> findByOrganizationIdAndUserId(UUID organizationId, UUID userId) {
+        // Both ids are always in the predicate: a membership is only ever addressed within its tenant.
+        return entityManager.createQuery(
+                        "select m from MembershipEntity m where m.organizationId = :organizationId and m.userId = :userId",
+                        MembershipEntity.class)
+                .setParameter("organizationId", organizationId)
+                .setParameter("userId", userId)
+                .getResultStream()
+                .findFirst()
+                .map(MembershipEntity::toDomain);
     }
 }

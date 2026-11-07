@@ -17,20 +17,14 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 import com.longdnh.donot_get_left_behind.common.constants.ApiErrorCodes;
 import com.longdnh.donot_get_left_behind.common.constants.ClientMessages;
-import com.longdnh.donot_get_left_behind.identity.application.exception.EmailAlreadyExistsException;
-import com.longdnh.donot_get_left_behind.identity.application.exception.InvalidRegistrationException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
-    @ExceptionHandler(InvalidRegistrationException.class)
-    public ResponseEntity<ApiError> invalidRegistration(InvalidRegistrationException exception) {
-        return error(HttpStatus.BAD_REQUEST, ApiErrorCodes.INVALID_REQUEST, exception.getMessage());
-    }
-
-    @ExceptionHandler(EmailAlreadyExistsException.class)
-    public ResponseEntity<ApiError> duplicateEmail() {
-        return error(HttpStatus.CONFLICT, ApiErrorCodes.EMAIL_ALREADY_EXISTS, ClientMessages.EMAIL_ALREADY_EXISTS);
+    /** Every module-specific error funnels through here; common never imports module exception types. */
+    @ExceptionHandler(ApiException.class)
+    public ResponseEntity<ApiError> apiException(ApiException exception) {
+        return error(exception.getStatus(), exception.getCode(), exception.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
@@ -52,22 +46,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             return error(HttpStatus.FORBIDDEN, ApiErrorCodes.CSRF_INVALID, ClientMessages.CSRF_TOKEN_REQUIRED);
         }
         return error(HttpStatus.FORBIDDEN, ApiErrorCodes.FORBIDDEN, ClientMessages.ACCESS_DENIED);
-    }
-
-    @ExceptionHandler(InvalidCredentialsException.class)
-    public ResponseEntity<ApiError> invalidCredentials() {
-        return error(
-                HttpStatus.UNAUTHORIZED,
-                ApiErrorCodes.INVALID_CREDENTIALS,
-                ClientMessages.INVALID_CREDENTIALS);
-    }
-
-    @ExceptionHandler(InvalidRefreshTokenException.class)
-    public ResponseEntity<ApiError> invalidRefreshToken() {
-        return error(
-                HttpStatus.UNAUTHORIZED,
-                ApiErrorCodes.INVALID_REFRESH_TOKEN,
-                ClientMessages.INVALID_REFRESH_TOKEN);
     }
 
     @Override

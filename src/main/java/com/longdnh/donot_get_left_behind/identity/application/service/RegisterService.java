@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 
 import com.longdnh.donot_get_left_behind.identity.application.RegistrationPolicy;
 import com.longdnh.donot_get_left_behind.identity.application.exception.EmailAlreadyExistsException;
-import com.longdnh.donot_get_left_behind.identity.application.port.IdGenerator;
+import com.longdnh.donot_get_left_behind.common.id.IdGenerator;
 import com.longdnh.donot_get_left_behind.identity.application.port.PasswordHasher;
 import com.longdnh.donot_get_left_behind.identity.application.port.UserRepository;
 import com.longdnh.donot_get_left_behind.identity.domain.User;

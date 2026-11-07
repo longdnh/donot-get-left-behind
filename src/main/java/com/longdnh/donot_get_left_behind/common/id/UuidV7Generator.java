@@ -1,4 +1,4 @@
-package com.longdnh.donot_get_left_behind.identity.infrastructure.security;
+package com.longdnh.donot_get_left_behind.common.id;
 
 import java.util.UUID;
 
@@ -6,7 +6,6 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.uuid.Generators;
 import com.fasterxml.uuid.impl.TimeBasedEpochGenerator;
-import com.longdnh.donot_get_left_behind.identity.application.port.IdGenerator;
 
 @Component
 public final class UuidV7Generator implements IdGenerator {

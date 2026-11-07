@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.longdnh.donot_get_left_behind.common.Exception.InvalidRefreshTokenException;
+import com.longdnh.donot_get_left_behind.identity.application.exception.InvalidRefreshTokenException;
 import com.longdnh.donot_get_left_behind.common.constants.ClientMessages;
 import com.longdnh.donot_get_left_behind.identity.application.dto.LoginResult;
 import com.longdnh.donot_get_left_behind.identity.application.port.UserRepository;

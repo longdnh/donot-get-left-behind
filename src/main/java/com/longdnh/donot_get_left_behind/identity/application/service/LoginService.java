@@ -9,11 +9,11 @@ import java.util.Objects;
 
 import org.springframework.transaction.support.TransactionTemplate;
 
-import com.longdnh.donot_get_left_behind.common.Exception.InvalidCredentialsException;
+import com.longdnh.donot_get_left_behind.identity.application.exception.InvalidCredentialsException;
 import com.longdnh.donot_get_left_behind.identity.application.dto.LoginResult;
 import com.longdnh.donot_get_left_behind.identity.application.port.AccessTokenIssuer;
 import com.longdnh.donot_get_left_behind.identity.application.port.AuthSessionRepository;
-import com.longdnh.donot_get_left_behind.identity.application.port.IdGenerator;
+import com.longdnh.donot_get_left_behind.common.id.IdGenerator;
 import com.longdnh.donot_get_left_behind.identity.application.port.PasswordHasher;
 import com.longdnh.donot_get_left_behind.identity.application.port.RefreshTokenGenerator;
 import com.longdnh.donot_get_left_behind.identity.application.port.RefreshTokenRepository;

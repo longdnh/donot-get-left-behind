@@ -7,8 +7,9 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.longdnh.donot_get_left_behind.identity.application.port.IdGenerator;
+import com.longdnh.donot_get_left_behind.common.id.IdGenerator;
 import com.longdnh.donot_get_left_behind.tenancy.application.dto.CreateOrganizationResult;
+import com.longdnh.donot_get_left_behind.tenancy.application.exception.OrganizationNotFoundException;
 import com.longdnh.donot_get_left_behind.tenancy.application.port.MembershipRepository;
 import com.longdnh.donot_get_left_behind.tenancy.application.port.OrganizationRepository;
 import com.longdnh.donot_get_left_behind.tenancy.domain.Membership;
@@ -23,6 +24,7 @@ public class OrganizationService {
 
     private final OrganizationRepository organizationRepository;
     private final MembershipRepository membershipRepository;
+    private final OrganizationAccessService accessService;
     private final IdGenerator idGenerator;
     private final Clock clock;
 
@@ -43,5 +45,14 @@ public class OrganizationService {
         return new CreateOrganizationResult(
                 organizationRepository.create(organization),
                 membershipRepository.create(ownerMembership));
+    }
+
+    /** Any active member may read the profile; everyone else gets the same 404. */
+    @Transactional(readOnly = true)
+    public Organization getProfile(UUID organizationId, UUID callerUserId) {
+        accessService.requireActiveMembership(organizationId, callerUserId);
+        // The FK guarantees the organization exists once a membership does; the orElseThrow is defensive.
+        return organizationRepository.findById(organizationId)
+                .orElseThrow(OrganizationNotFoundException::new);
     }
 }

@@ -8,6 +8,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -45,5 +47,18 @@ public class OrganizationController {
                 .body(new CreateOrganizationResponse(
                         OrganizationResponse.from(result.organization()),
                         MembershipResponse.from(result.ownerMembership())));
+    }
+
+    @GetMapping("/{organizationId}")
+    public ResponseEntity<OrganizationResponse> getProfile(
+            @PathVariable UUID organizationId,
+            @AuthenticationPrincipal Jwt jwt) {
+
+        // organizationId is untrusted route input; the service verifies the caller's membership in it.
+        UUID callerUserId = UUID.fromString(jwt.getSubject());
+
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(OrganizationResponse.from(organizationService.getProfile(organizationId, callerUserId)));
     }
 }

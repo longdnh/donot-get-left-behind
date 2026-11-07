@@ -10,11 +10,11 @@ import java.util.regex.Pattern;
 
 import org.springframework.transaction.support.TransactionTemplate;
 
-import com.longdnh.donot_get_left_behind.common.Exception.InvalidRefreshTokenException;
+import com.longdnh.donot_get_left_behind.identity.application.exception.InvalidRefreshTokenException;
 import com.longdnh.donot_get_left_behind.identity.application.dto.RefreshResult;
 import com.longdnh.donot_get_left_behind.identity.application.port.AccessTokenIssuer;
 import com.longdnh.donot_get_left_behind.identity.application.port.AuthSessionRepository;
-import com.longdnh.donot_get_left_behind.identity.application.port.IdGenerator;
+import com.longdnh.donot_get_left_behind.common.id.IdGenerator;
 import com.longdnh.donot_get_left_behind.identity.application.port.RefreshTokenGenerator;
 import com.longdnh.donot_get_left_behind.identity.application.port.RefreshTokenRepository;
 import com.longdnh.donot_get_left_behind.identity.application.port.UserRepository;

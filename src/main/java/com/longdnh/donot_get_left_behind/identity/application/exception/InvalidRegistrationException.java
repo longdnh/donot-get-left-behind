@@ -1,9 +1,14 @@
 package com.longdnh.donot_get_left_behind.identity.application.exception;
 
+import org.springframework.http.HttpStatus;
+
+import com.longdnh.donot_get_left_behind.common.Exception.ApiException;
+import com.longdnh.donot_get_left_behind.common.constants.ApiErrorCodes;
+
 /** Invalid client input, distinct from a programming error or invalid persisted state. */
-public final class InvalidRegistrationException extends IllegalArgumentException {
+public final class InvalidRegistrationException extends ApiException {
 
     public InvalidRegistrationException(String message) {
-        super(message);
+        super(HttpStatus.BAD_REQUEST, ApiErrorCodes.INVALID_REQUEST, message);
     }
 }
